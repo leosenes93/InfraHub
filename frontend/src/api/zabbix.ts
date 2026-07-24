@@ -18,3 +18,10 @@ export async function getAssetMonitoring(assetId: string): Promise<AssetMonitori
   const { data } = await apiClient.get<AssetMonitoringStatus>(`/assets/${assetId}/monitoring`);
   return data;
 }
+
+export async function linkAssetToZabbix(assetId: string): Promise<AssetMonitoringStatus> {
+  const { data } = await apiClient.post<AssetMonitoringStatus>(
+    `/assets/${assetId}/monitoring/link-zabbix`
+  );
+  return data;
+}

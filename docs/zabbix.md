@@ -64,9 +64,19 @@ Depois de configurar `ZABBIX_API_TOKEN` no `.env`, reinicie o backend (`docker c
 
 ## Como vincular um ativo
 
-Não há sincronização automática de hosts — o vínculo é manual e intencional (evita importar centenas de hosts irrelevantes de um Zabbix compartilhado). No formulário de edição do ativo (`AssetFormModal`), preencha "ID do host no Zabbix" com o `hostid` do host correspondente (visível na URL da página do host, na UI do Zabbix, ou via `host.get`). A partir daí, a página do ativo passa a mostrar disponibilidade e problemas ativos, atualizados a cada 30s.
+Não há sincronização automática de hosts vindo do Zabbix para o InfraHub — o vínculo é sempre iniciado a partir de um ativo específico (evita importar centenas de hosts irrelevantes de um Zabbix compartilhado). Duas formas:
 
-Sem `zabbix_host_id` preenchido, a seção "Monitoramento" do ativo mostra apenas que ele não está vinculado — nenhuma chamada é feita à API do Zabbix.
+1. **Manual**: no formulário de edição do ativo (`AssetFormModal`), preencha "ID do host no Zabbix" com o `hostid` de um host que já existe no Zabbix (visível na URL da página do host, na UI, ou via `host.get`).
+2. **Criação automática**: se o ativo tiver um endereço IP cadastrado (campo `ip_address`, disponível em Servidor/VM/Equipamento de Rede) e ainda não estiver vinculado, a página do ativo mostra o botão "Criar host no Zabbix (IP ...)". Ele chama `POST /assets/{id}/monitoring/link-zabbix`, que:
+   - garante a existência do grupo de hosts `InfraHub` no Zabbix (cria se não existir);
+   - aplica o template padrão **ICMP Ping** (checagem de disponibilidade via `fping`, sem exigir Zabbix Agent instalado no destino — ideal para o primeiro momento de uma VM recém-criada no Hyper-V, antes de instalar o agente);
+   - cria o host com uma interface apontando para o IP do ativo e salva o `hostid` retornado no próprio ativo.
+
+   Ativos sem `ip_address` (ex.: Aplicação, Container) ou já vinculados não mostram o botão — nesses casos, use o vínculo manual.
+
+A partir de qualquer um dos dois caminhos, a página do ativo passa a mostrar disponibilidade e problemas ativos, atualizados a cada 30s. Sem `zabbix_host_id` preenchido, a seção "Monitoramento" mostra apenas que o ativo não está vinculado — nenhuma chamada é feita à API do Zabbix.
+
+**Limitação conhecida**: excluir um ativo no InfraHub não remove o host correspondente no Zabbix (são sistemas desacoplados de propósito) — se necessário, remova o host manualmente pela UI do Zabbix.
 
 ## Segurança
 

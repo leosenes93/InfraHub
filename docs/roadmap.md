@@ -52,7 +52,7 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 ## Fase 7 — Integração com Zabbix ✅
 
 - Stack acoplável `docker-compose.zabbix.yml` (Postgres + TimescaleDB dedicado, `zabbix-server`, `zabbix-web`, `zabbix-agent2` de exemplo) — ver [docs/zabbix.md](zabbix.md) para arquitetura completa e como gerar o token de API.
-- Vínculo manual ativo ↔ host do Zabbix (`zabbix_host_id`, migration `0006`), sem sincronização automática de hosts.
+- Vínculo ativo ↔ host do Zabbix (`zabbix_host_id`, migration `0006`), manual ou automático (botão que cria o host via API a partir do IP do ativo, com grupo `InfraHub` e template `ICMP Ping`) — sem sincronização de hosts no sentido Zabbix → InfraHub.
 - `GET /assets/{asset_id}/monitoring` traz disponibilidade e problemas ativos ao vivo da API do Zabbix; seção "Monitoramento" na página do ativo, atualizada a cada 30s.
 - Porta trapper (`10051`) exposta para receber, no futuro, agentes Zabbix instalados em VMs no Hyper-V (controlador de domínio, DNS etc.), fora do escopo deste repositório.
 - Validado de ponta a ponta com a stack real: hypertables confirmadas via `psql`, token de API gerado através do fluxo `token.create` → `token.generate`, e um ativo vinculado ao host embutido do Zabbix retornando status/problemas reais através do Nginx.

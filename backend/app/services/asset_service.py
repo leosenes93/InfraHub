@@ -12,7 +12,11 @@ from app.schemas.asset import (
     AssetTypeCount,
     AssetUpdate,
 )
-from app.services.exceptions import AssetNotFoundError
+from app.services.exceptions import (
+    AssetAlreadyLinkedToZabbixError,
+    AssetMissingIpAddressError,
+    AssetNotFoundError,
+)
 
 
 class AssetService:
@@ -66,6 +70,20 @@ class AssetService:
         asset.documentation = data.documentation
         asset.zabbix_host_id = data.zabbix_host_id
         return self.repository.update(asset)
+
+    def set_zabbix_host_id(self, asset_id: uuid.UUID, zabbix_host_id: str) -> Asset:
+        asset = self.get_asset(asset_id)
+        asset.zabbix_host_id = zabbix_host_id
+        return self.repository.update(asset)
+
+    def require_zabbix_linkable(self, asset: Asset) -> str:
+        if asset.zabbix_host_id:
+            raise AssetAlreadyLinkedToZabbixError("Ativo ja esta vinculado a um host do Zabbix")
+
+        ip_address = asset.attributes.get("ip_address")
+        if not ip_address:
+            raise AssetMissingIpAddressError("Ativo nao possui endereco IP cadastrado")
+        return ip_address
 
     def delete_asset(self, asset_id: uuid.UUID) -> None:
         asset = self.get_asset(asset_id)

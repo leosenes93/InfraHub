@@ -17,6 +17,15 @@ def _auth_headers(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
+def _create_user(client, admin_token: str, email: str, role: str) -> None:
+    response = client.post(
+        "/api/v1/users",
+        json={"email": email, "full_name": "Teste", "role": role, "password": "senha12345"},
+        headers=_auth_headers(admin_token),
+    )
+    assert response.status_code == 201, response.text
+
+
 def _create_asset(client, token: str, **overrides) -> str:
     payload = {
         "name": "srv-zabbix-01",
@@ -103,3 +112,78 @@ def test_monitoring_returns_404_for_unknown_asset(client):
         headers=_auth_headers(token),
     )
     assert response.status_code == 404
+
+
+def test_link_zabbix_creates_host_and_persists_id(client, monkeypatch):
+    token = _admin_token(client)
+    asset_id = _create_asset(
+        client, token, attributes={"hostname": "srv-zabbix-01", "ip_address": "10.0.0.5"}
+    )
+
+    monkeypatch.setattr(settings, "zabbix_api_token", "fake-token")
+    monkeypatch.setattr(
+        monitoring_route.ZabbixService, "create_host", lambda self, name, ip: "10099"
+    )
+    monkeypatch.setattr(
+        monitoring_route.ZabbixService,
+        "get_host_status",
+        lambda self, zabbix_host_id: {
+            "host_name": "srv-zabbix-01",
+            "available": None,
+            "problems": [],
+        },
+    )
+
+    response = client.post(
+        f"/api/v1/assets/{asset_id}/monitoring/link-zabbix", headers=_auth_headers(token)
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["linked"] is True
+    assert body["zabbix_host_id"] == "10099"
+
+    get_response = client.get(f"/api/v1/assets/{asset_id}", headers=_auth_headers(token))
+    assert get_response.json()["zabbix_host_id"] == "10099"
+
+
+def test_link_zabbix_rejects_asset_without_ip_address(client):
+    token = _admin_token(client)
+    asset_id = _create_asset(client, token, attributes={"hostname": "srv-no-ip"})
+
+    response = client.post(
+        f"/api/v1/assets/{asset_id}/monitoring/link-zabbix", headers=_auth_headers(token)
+    )
+
+    assert response.status_code == 422
+
+
+def test_link_zabbix_rejects_already_linked_asset(client):
+    token = _admin_token(client)
+    asset_id = _create_asset(
+        client,
+        token,
+        attributes={"hostname": "srv-linked", "ip_address": "10.0.0.6"},
+        zabbix_host_id="10084",
+    )
+
+    response = client.post(
+        f"/api/v1/assets/{asset_id}/monitoring/link-zabbix", headers=_auth_headers(token)
+    )
+
+    assert response.status_code == 409
+
+
+def test_link_zabbix_requires_write_role(client):
+    admin_token = _admin_token(client)
+    asset_id = _create_asset(
+        client, admin_token, attributes={"hostname": "srv-viewer", "ip_address": "10.0.0.7"}
+    )
+    _create_user(client, admin_token, "viewer.zabbix@infrahub.io", "viewer")
+    viewer_token = _login(client, "viewer.zabbix@infrahub.io", "senha12345")
+
+    response = client.post(
+        f"/api/v1/assets/{asset_id}/monitoring/link-zabbix", headers=_auth_headers(viewer_token)
+    )
+
+    assert response.status_code == 403

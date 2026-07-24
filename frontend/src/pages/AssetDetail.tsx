@@ -11,7 +11,7 @@ import {
   uploadAttachment,
   type Attachment,
 } from "@/api/attachments";
-import { getAssetMonitoring } from "@/api/zabbix";
+import { getAssetMonitoring, linkAssetToZabbix } from "@/api/zabbix";
 import { AssetFormModal } from "@/components/inventory/AssetFormModal";
 import { AssetStatusBadge } from "@/components/inventory/AssetStatusBadge";
 import { AssetTypeBadge } from "@/components/inventory/AssetTypeBadge";
@@ -32,6 +32,7 @@ export function AssetDetail() {
   const [docsDraft, setDocsDraft] = useState("");
   const [metadataError, setMetadataError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [linkZabbixError, setLinkZabbixError] = useState<string | null>(null);
 
   const {
     data: asset,
@@ -81,6 +82,18 @@ export function AssetDetail() {
   const deleteAttachmentMutation = useMutation({
     mutationFn: (attachment: Attachment) => deleteAttachment(assetId!, attachment.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["attachments", assetId] }),
+  });
+
+  const linkZabbixMutation = useMutation({
+    mutationFn: () => linkAssetToZabbix(assetId!),
+    onSuccess: () => {
+      setLinkZabbixError(null);
+      queryClient.invalidateQueries({ queryKey: ["monitoring", assetId] });
+      queryClient.invalidateQueries({ queryKey: ["asset", assetId] });
+    },
+    onError: () => {
+      setLinkZabbixError("Não foi possível criar o host no Zabbix. Verifique se o Zabbix está acessível.");
+    },
   });
 
   function startEditingDocs() {
@@ -133,6 +146,9 @@ export function AssetDetail() {
       </div>
     );
   }
+
+  const ipAddress =
+    typeof asset.attributes.ip_address === "string" ? asset.attributes.ip_address : null;
 
   return (
     <div className="space-y-6">
@@ -219,10 +235,25 @@ export function AssetDetail() {
             Não foi possível consultar o Zabbix agora. Tente novamente em instantes.
           </p>
         ) : !monitoring || !monitoring.linked ? (
-          <p className="text-sm text-slate-500">
-            Ativo não vinculado a um host do Zabbix
-            {canWrite ? ' — informe o "ID do host no Zabbix" em Editar ativo.' : "."}
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-slate-500">
+              Ativo não vinculado a um host do Zabbix
+              {canWrite ? ' — informe o "ID do host no Zabbix" em Editar ativo' : "."}
+              {canWrite && ipAddress ? " ou crie automaticamente abaixo." : canWrite ? "." : ""}
+            </p>
+            {canWrite && ipAddress && (
+              <button
+                onClick={() => linkZabbixMutation.mutate()}
+                disabled={linkZabbixMutation.isPending}
+                className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+              >
+                {linkZabbixMutation.isPending
+                  ? "Criando host..."
+                  : `Criar host no Zabbix (IP ${ipAddress})`}
+              </button>
+            )}
+            {linkZabbixError && <p className="text-sm text-red-600">{linkZabbixError}</p>}
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="flex items-center gap-2">

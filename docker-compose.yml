@@ -68,6 +68,7 @@ services:
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
       VITE_GRAFANA_URL: ${VITE_GRAFANA_URL:-http://localhost:3000}
+      VITE_ZABBIX_URL: ${VITE_ZABBIX_URL:-http://localhost:8082}
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules

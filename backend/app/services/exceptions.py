@@ -40,3 +40,11 @@ class ZabbixUnavailableError(DomainError):
 
 class ZabbixNotConfiguredError(DomainError):
     pass
+
+
+class AssetAlreadyLinkedToZabbixError(DomainError):
+    pass
+
+
+class AssetMissingIpAddressError(DomainError):
+    pass

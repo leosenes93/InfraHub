@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -18,6 +19,10 @@ _SEVERITY_LABELS = {
     "4": "Alta",
     "5": "Desastre",
 }
+
+_HOST_GROUP_NAME = "InfraHub"
+_ICMP_TEMPLATE_NAME = "ICMP Ping"
+_INVALID_HOST_CHARS = re.compile(r"[^A-Za-z0-9._ -]")
 
 
 class ZabbixService:
@@ -95,3 +100,49 @@ class ZabbixService:
             )
             for problem in problems_raw
         ]
+
+    def create_host(self, name: str, ip_address: str) -> str:
+        group_id = self._get_or_create_host_group_id()
+        template_id = self._get_icmp_template_id()
+        host_name = self._sanitize_host_name(name)
+
+        result = self._call(
+            "host.create",
+            {
+                "host": host_name,
+                "name": name,
+                "groups": [{"groupid": group_id}],
+                "templates": [{"templateid": template_id}],
+                "interfaces": [
+                    {
+                        "type": 1,
+                        "main": 1,
+                        "useip": 1,
+                        "ip": ip_address,
+                        "dns": "",
+                        "port": "10050",
+                    }
+                ],
+            },
+        )
+        return result["hostids"][0]
+
+    def _get_or_create_host_group_id(self) -> str:
+        groups = self._call("hostgroup.get", {"filter": {"name": [_HOST_GROUP_NAME]}})
+        if groups:
+            return groups[0]["groupid"]
+
+        created = self._call("hostgroup.create", {"name": _HOST_GROUP_NAME})
+        return created["groupids"][0]
+
+    def _get_icmp_template_id(self) -> str:
+        templates = self._call("template.get", {"filter": {"name": [_ICMP_TEMPLATE_NAME]}})
+        if not templates:
+            raise ZabbixUnavailableError(
+                f"Template '{_ICMP_TEMPLATE_NAME}' nao encontrado no Zabbix"
+            )
+        return templates[0]["templateid"]
+
+    @staticmethod
+    def _sanitize_host_name(name: str) -> str:
+        return _INVALID_HOST_CHARS.sub("_", name)

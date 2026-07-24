@@ -12,6 +12,7 @@ const NAV_LINKS = [
 ];
 
 const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL;
+const ZABBIX_URL = import.meta.env.VITE_ZABBIX_URL;
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -50,6 +51,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
               title="Abre o Grafana em uma nova aba (stack de observabilidade)"
             >
               Monitoramento
+              <span aria-hidden className="text-xs text-slate-400">
+                ↗
+              </span>
+            </a>
+          )}
+          {ZABBIX_URL && (
+            <a
+              href={ZABBIX_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              title="Abre o Zabbix em uma nova aba (monitoramento da infraestrutura cadastrada)"
+            >
+              Zabbix
               <span aria-hidden className="text-xs text-slate-400">
                 ↗
               </span>

@@ -128,7 +128,7 @@ Stack adicional e **acoplável** ao ambiente principal (mesmo padrão da observa
 ./scripts/zabbix.ps1  # Windows (PowerShell)
 ```
 
-Isso sobe um Zabbix completo (servidor, interface web, agente de exemplo e Postgres dedicado com TimescaleDB). Interface web em `http://localhost:8082` (login inicial `Admin` / `zabbix` — troque antes de expor o ambiente). Depois de gerar um token de API e configurá-lo em `ZABBIX_API_TOKEN` no `.env`, qualquer ativo do inventário pode ser vinculado a um host do Zabbix (campo "ID do host no Zabbix" no formulário de edição) — a página do ativo passa a mostrar disponibilidade e problemas ativos ao vivo, via `GET /api/v1/assets/{id}/monitoring`.
+Isso sobe um Zabbix completo (servidor, interface web, agente de exemplo e Postgres dedicado com TimescaleDB). Interface web em `http://localhost:8082` (login inicial `Admin` / `zabbix` — troque antes de expor o ambiente; também tem atalho no menu "Zabbix" do InfraHub). Depois de gerar um token de API e configurá-lo em `ZABBIX_API_TOKEN` no `.env`, qualquer ativo do inventário pode ser vinculado a um host do Zabbix — manualmente (campo "ID do host no Zabbix" no formulário de edição) ou automaticamente (botão "Criar host no Zabbix", disponível para ativos com IP cadastrado). A página do ativo passa a mostrar disponibilidade e problemas ativos ao vivo, via `GET /api/v1/assets/{id}/monitoring`.
 
 Veja [docs/zabbix.md](docs/zabbix.md) para a arquitetura completa, o passo a passo de geração do token de API e por que a porta `10051` fica exposta (preparação para agentes em VMs no Hyper-V).
 
