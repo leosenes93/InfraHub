@@ -53,8 +53,8 @@ export function Dashboard() {
       </div>
 
       <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
-        Autenticação, RBAC, infraestrutura Docker, observabilidade e o inventário de ativos estão
-        prontos. Wiki técnica e auditoria chegam nas próximas fases do projeto.
+        Documentação técnica e anexos ficam na página de cada ativo (aba "Inventário"). Métricas e
+        logs detalhados estão no Grafana — atalho no menu "Monitoramento".
       </div>
     </div>
   );

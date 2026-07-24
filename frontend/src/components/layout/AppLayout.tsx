@@ -11,7 +11,7 @@ const NAV_LINKS = [
   { label: "Docker Local", to: "/docker" },
 ];
 
-const DISABLED_NAV_ITEMS = ["Wiki Técnica", "Monitoramento"];
+const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL;
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -41,15 +41,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {item.label}
             </NavLink>
           ))}
-          {DISABLED_NAV_ITEMS.map((label) => (
-            <span
-              key={label}
-              className="block cursor-not-allowed rounded-md px-3 py-2 text-sm font-medium text-slate-400"
-              title="Disponível em uma próxima fase"
+          {GRAFANA_URL && (
+            <a
+              href={GRAFANA_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              title="Abre o Grafana em uma nova aba (stack de observabilidade)"
             >
-              {label}
-            </span>
-          ))}
+              Monitoramento
+              <span aria-hidden className="text-xs text-slate-400">
+                ↗
+              </span>
+            </a>
+          )}
         </nav>
       </aside>
 
