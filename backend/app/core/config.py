@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     initial_admin_password: str = "change-me"
     initial_admin_full_name: str = "Administrador InfraHub"
 
+    uploads_dir: str = "storage/uploads"
+    max_upload_size_mb: int = 10
+
     @property
     def cors_origins(self) -> list[str]:
         try:

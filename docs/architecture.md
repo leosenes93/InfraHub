@@ -71,6 +71,14 @@ Esse desenho segue os princípios SOLID: cada camada tem uma única responsabili
 - Segue exatamente o mesmo padrão de camadas dos usuários: `AssetRepository`/`AssetService`/`api/v1/assets.py`, reaproveitando `BaseRepository` (agora também com `update`/`delete` genéricos) e a dependency `require_roles` já existente.
 - RBAC: leitura liberada para qualquer usuário autenticado; criar/editar exige Administrador, Analista ou Operador; excluir exige Administrador.
 
+## Wiki técnica e anexos (Fase 4)
+
+- **Documentação**: em vez de um endpoint dedicado, `documentation` é só mais um campo em `Asset`/`AssetUpdate` — reaproveita o `PATCH /assets/{id}` e o RBAC já existentes, sem nova rota nem nova regra de permissão.
+- **Anexos**: modelo `AssetAttachment` (`app/models/attachment.py`) próprio, com repository/service/router seguindo o mesmo padrão de camadas (`AttachmentRepository`, `AttachmentService`, `api/v1/attachments.py`, montado em `/assets/{asset_id}/attachments`).
+- **Armazenamento em disco** centralizado em `app/core/storage.py`: gera caminhos únicos e seguros (`storage/uploads/<asset_id>/<uuid>_<nome-sanitizado>`) e limpa a pasta de um ativo quando ele é excluído (chamado a partir de `AssetService.delete_asset`, evitando arquivos órfãos). É o único módulo que sabe onde os arquivos ficam — tanto o service de anexos quanto a exclusão de ativos dependem dele, em vez de duplicar a lógica de path.
+- Validação de tipo de arquivo (allowlist) e tamanho máximo (`settings.max_upload_size_mb`) acontece no `AttachmentService`, antes de gravar em disco.
+- Testes usam um diretório de upload isolado por execução (fixture `_isolated_uploads_dir` em `tests/conftest.py`, via `monkeypatch` + `tmp_path`), para não escrever no `storage/uploads/` real do projeto.
+
 ## Observabilidade (Fase 1 + Fase 2)
 
 - **Logs estruturados**: todo log é emitido em JSON (`app/core/logging.py`), e cada requisição HTTP é registrada com `request_id`, método, path, status e duração (`app/middleware/logging_middleware.py`).

@@ -134,6 +134,34 @@ def test_update_and_delete_asset_as_admin(client):
     assert get_response.status_code == 404
 
 
+def test_documentation_is_persisted_on_update(client):
+    token = _admin_token(client)
+    create_response = client.post(
+        "/api/v1/assets",
+        json={
+            "name": "srv-docs",
+            "asset_type": "server",
+            "attributes": {"hostname": "srv-docs"},
+        },
+        headers=_auth_headers(token),
+    )
+    asset_id = create_response.json()["id"]
+    assert create_response.json()["documentation"] is None
+
+    update_response = client.patch(
+        f"/api/v1/assets/{asset_id}",
+        json={
+            "name": "srv-docs",
+            "asset_type": "server",
+            "attributes": {"hostname": "srv-docs"},
+            "documentation": "# Documentação\n\nEste servidor hospeda o site institucional.",
+        },
+        headers=_auth_headers(token),
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["documentation"].startswith("# Documentação")
+
+
 def test_viewer_cannot_create_asset(client):
     admin_token = _admin_token(client)
     _create_user(client, admin_token, "viewer.assets@infrahub.io", "viewer")

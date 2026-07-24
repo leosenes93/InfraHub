@@ -28,10 +28,12 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 - Página de Inventário no frontend com filtro por tipo, busca e formulário adaptável por tipo de ativo.
 - Dashboard real (contagens por tipo/status via `GET /assets/summary`), substituindo os indicadores mockados da Fase 1.
 
-## Fase 4 — Wiki técnica e documentação de ativos
+## Fase 4 — Wiki técnica e documentação de ativos ✅
 
-- Editor de conteúdo por ativo (Markdown).
-- Upload de diagramas e documentos (armazenamento em volume dedicado, `storage/uploads/`).
+- Documentação em Markdown por ativo (`assets.documentation`), editada e renderizada (com preview) na página de detalhe de cada ativo.
+- Upload de diagramas e documentos por ativo (`asset_attachments`), armazenados em `storage/uploads/<asset_id>/`, com listagem, download e exclusão.
+- RBAC: upload segue a mesma regra de escrita do inventário (Admin/Analista/Operador); exclusão de anexos restrita a Administrador.
+- Validação de tipo de arquivo (imagens, PDF, texto/Markdown) e tamanho máximo (10MB, configurável).
 
 ## Fase 5 — Integrações e automações
 

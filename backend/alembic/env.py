@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.core.config import settings
 from app.core.database import Base
-from app.models import Asset, User  # noqa: F401  -- garante que os modelos sejam registrados
+from app.models import Asset, AssetAttachment, User  # noqa: F401  -- registra os modelos
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

@@ -2,7 +2,7 @@
 
 Plataforma web para gestão de infraestrutura de TI em ambientes corporativos — inventário, documentação técnica, monitoramento e administração de ativos centralizados em um único sistema.
 
-> **Status:** Fase 3 — inventário de ativos. Veja o [roadmap completo](docs/roadmap.md).
+> **Status:** Fase 4 — wiki técnica e documentação de ativos. Veja o [roadmap completo](docs/roadmap.md).
 
 ## Stack
 
@@ -98,6 +98,15 @@ O endpoint `/metrics` do backend não é exposto pelo Nginx (que só faz proxy d
 Acesse `http://localhost:8080/inventory` (autenticado) para gerenciar Servidores, Máquinas Virtuais, Equipamentos de Rede, Containers e Aplicações — uma página unificada com filtro por tipo, busca e formulário que adapta os campos ao tipo de ativo selecionado. O dashboard (`/`) mostra contagens reais por tipo e status.
 
 API: `GET/POST /api/v1/assets`, `GET/PATCH/DELETE /api/v1/assets/{id}`, `GET /api/v1/assets/summary` — ver RBAC abaixo para quem pode criar/editar/excluir.
+
+## Wiki técnica e anexos
+
+Cada ativo tem uma página de detalhe (`/inventory/{id}`, clique no nome na tabela) com:
+
+- **Documentação em Markdown** — editor com preview renderizado (`react-markdown`), salva via `PATCH /api/v1/assets/{id}`.
+- **Anexos** — upload de diagramas/documentos (imagens PNG/JPEG/SVG, PDF, texto/Markdown, até 10MB), listados com download e exclusão via `/api/v1/assets/{id}/attachments`.
+
+Os arquivos ficam em `storage/uploads/<asset_id>/` (volume Docker, fora do controle de versão — já reservado no `.gitignore`). Ao excluir um ativo, seus anexos em disco também são removidos.
 
 ## Papéis de acesso (RBAC)
 

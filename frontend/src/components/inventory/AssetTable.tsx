@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import type { Asset } from "@/api/assets";
 import { AssetStatusBadge } from "@/components/inventory/AssetStatusBadge";
 import { AssetTypeBadge } from "@/components/inventory/AssetTypeBadge";
@@ -52,7 +54,11 @@ export function AssetTable({ assets, canWrite, canDelete, onEdit, onDelete }: As
         <tbody className="divide-y divide-slate-100">
           {assets.map((asset) => (
             <tr key={asset.id}>
-              <td className="px-4 py-3 text-sm font-medium text-slate-900">{asset.name}</td>
+              <td className="px-4 py-3 text-sm font-medium">
+                <Link to={`/inventory/${asset.id}`} className="text-brand-600 hover:text-brand-700">
+                  {asset.name}
+                </Link>
+              </td>
               <td className="px-4 py-3">
                 <AssetTypeBadge type={asset.asset_type} />
               </td>

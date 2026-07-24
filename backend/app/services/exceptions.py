@@ -16,3 +16,15 @@ class InactiveUserError(DomainError):
 
 class AssetNotFoundError(DomainError):
     pass
+
+
+class AttachmentNotFoundError(DomainError):
+    pass
+
+
+class UnsupportedFileTypeError(DomainError):
+    pass
+
+
+class FileTooLargeError(DomainError):
+    pass

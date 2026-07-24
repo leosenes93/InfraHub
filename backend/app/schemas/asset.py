@@ -66,6 +66,7 @@ class AssetBase(BaseModel):
     location: str | None = Field(default=None, max_length=255)
     tags: list[str] = Field(default_factory=list)
     attributes: dict = Field(default_factory=dict)
+    documentation: str | None = None
 
     @model_validator(mode="after")
     def validate_attributes_for_type(self) -> "AssetBase":

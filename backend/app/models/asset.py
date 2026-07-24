@@ -51,3 +51,4 @@ class Asset(TimestampedModel):
     owner_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    documentation: Mapped[str | None] = mapped_column(Text, nullable=True)

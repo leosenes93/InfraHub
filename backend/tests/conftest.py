@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.api.deps import get_db_session
+from app.core.config import settings
 from app.core.database import Base
 from app.main import app
 
@@ -24,6 +25,12 @@ def _prepare_database():
     Base.metadata.create_all(engine)
     yield
     Base.metadata.drop_all(engine)
+
+
+@pytest.fixture(autouse=True)
+def _isolated_uploads_dir(tmp_path, monkeypatch):
+    """Evita que os testes gravem anexos no storage/uploads real do projeto."""
+    monkeypatch.setattr(settings, "uploads_dir", str(tmp_path / "uploads"))
 
 
 @pytest.fixture

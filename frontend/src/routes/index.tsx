@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import { AssetDetail } from "@/pages/AssetDetail";
 import { Dashboard } from "@/pages/Dashboard";
 import { Inventory } from "@/pages/Inventory";
 import { Login } from "@/pages/Login";
@@ -26,6 +27,16 @@ export function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <Inventory />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inventory/:assetId"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <AssetDetail />
             </AppLayout>
           </ProtectedRoute>
         }

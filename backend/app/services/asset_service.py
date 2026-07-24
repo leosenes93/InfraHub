@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
+from app.core.storage import delete_asset_upload_dir
 from app.models.asset import Asset, AssetStatus, AssetType
 from app.repositories.asset_repository import AssetRepository
 from app.schemas.asset import (
@@ -46,6 +47,7 @@ class AssetService:
             location=data.location,
             tags=data.tags,
             attributes=data.attributes,
+            documentation=data.documentation,
             owner_id=owner_id,
         )
         return self.repository.add(asset)
@@ -60,11 +62,13 @@ class AssetService:
         asset.location = data.location
         asset.tags = data.tags
         asset.attributes = data.attributes
+        asset.documentation = data.documentation
         return self.repository.update(asset)
 
     def delete_asset(self, asset_id: uuid.UUID) -> None:
         asset = self.get_asset(asset_id)
         self.repository.delete(asset)
+        delete_asset_upload_dir(asset_id)
 
     def get_summary(self) -> AssetSummary:
         return AssetSummary(

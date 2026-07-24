@@ -13,6 +13,7 @@ export interface Asset {
   location: string | null;
   tags: string[];
   attributes: Record<string, unknown>;
+  documentation: string | null;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
@@ -27,6 +28,7 @@ export interface AssetPayload {
   location?: string | null;
   tags?: string[];
   attributes: Record<string, unknown>;
+  documentation?: string | null;
 }
 
 export interface AssetListFilters {
@@ -68,6 +70,11 @@ export const ASSET_STATUS_LABELS: Record<AssetStatus, string> = {
 
 export async function listAssets(filters: AssetListFilters = {}): Promise<Asset[]> {
   const { data } = await apiClient.get<Asset[]>("/assets", { params: filters });
+  return data;
+}
+
+export async function getAsset(id: string): Promise<Asset> {
+  const { data } = await apiClient.get<Asset>(`/assets/${id}`);
   return data;
 }
 
