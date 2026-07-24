@@ -11,15 +11,15 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 - Docker Compose para dev e produção, Nginx como proxy reverso.
 - CI (GitHub Actions) com lint, testes e build.
 
-## Fase 2 — Observabilidade e administração (proposta)
+## Fase 2 — Observabilidade e administração ✅
 
-- **Prometheus**: coleta de métricas do backend (via `prometheus-fastapi-instrumentator` ou similar), do Postgres e do host.
-- **Grafana**: dashboards para as métricas do Prometheus e logs do Loki.
-- **Loki + Promtail**: agregação centralizada dos logs estruturados já emitidos pela aplicação.
+- **Prometheus**: coleta métricas do backend (`prometheus-fastapi-instrumentator`), Postgres, Redis, containers (cAdvisor) e host (Node Exporter).
+- **Grafana**: datasources (Prometheus, Loki) e dashboard "InfraHub - Visão Geral" provisionados como código.
+- **Loki + Promtail**: agregação centralizada dos logs estruturados, coletados via descoberta automática de containers no Docker.
 - **cAdvisor** e **Node Exporter**: métricas de containers e do host.
-- **Portainer**: administração visual dos containers Docker.
-- **Uptime Kuma**: monitoramento de disponibilidade dos serviços expostos.
-- Novo `docker-compose.monitoring.yml`, acoplável ao ambiente principal.
+- **Portainer**: administração visual dos containers Docker (setup de admin manual no primeiro acesso).
+- **Uptime Kuma**: monitoramento de disponibilidade dos serviços (monitores configurados manualmente).
+- `docker-compose.monitoring.yml`, acoplável ao ambiente principal via `scripts/monitoring.sh` / `.ps1`.
 
 ## Fase 3 — Inventário de ativos
 

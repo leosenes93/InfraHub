@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -53,3 +54,7 @@ if settings.cors_origins:
 app.add_middleware(RequestLoggingMiddleware)
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)
+
+# Exposto apenas na rede interna do Docker (Nginx nao faz proxy de /metrics) -
+# somente o Prometheus alcanca este endpoint.
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)

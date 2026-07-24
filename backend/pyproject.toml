@@ -17,6 +17,7 @@ dependencies = [
     "redis>=5.1.1",
     "python-json-logger>=2.0.7",
     "python-multipart>=0.0.12",
+    "prometheus-fastapi-instrumentator>=7.0.0",
 ]
 
 [dependency-groups]

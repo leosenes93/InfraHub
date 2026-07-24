@@ -64,11 +64,50 @@ Esse desenho segue os princípios SOLID: cada camada tem uma única responsabili
 - Quatro perfis: **Administrador**, **Analista**, **Operador**, **Visualizador** (`app/models/user.py::UserRole`). Na Fase 1 apenas o Administrador tem rotas exclusivas (`GET/POST /users`); os demais perfis serão usados pelos módulos de negócio nas próximas fases.
 - Um usuário administrador inicial é criado automaticamente no primeiro start (lifespan do FastAPI), a partir de `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` no `.env`.
 
-## Observabilidade da Fase 1
+## Observabilidade (Fase 1 + Fase 2)
 
 - **Logs estruturados**: todo log é emitido em JSON (`app/core/logging.py`), e cada requisição HTTP é registrada com `request_id`, método, path, status e duração (`app/middleware/logging_middleware.py`).
 - **Health checks**: `GET /api/v1/health` (liveness) e `GET /api/v1/health/ready` (checa conectividade com Postgres e Redis). Usados pelos healthchecks do Docker Compose.
-- Prometheus/Grafana/Loki entram na Fase 2 para consumir esses logs e métricas de forma centralizada (ver `roadmap.md`).
+- **Métricas**: o backend expõe `GET /metrics` (via `prometheus-fastapi-instrumentator`) — não é proxeado pelo Nginx, então só é alcançável dentro da rede Docker interna, pelo Prometheus.
+
+A stack de observabilidade (`docker-compose.monitoring.yml`, Fase 2) coleta essas métricas e logs de forma centralizada:
+
+```mermaid
+flowchart LR
+    subgraph Fontes
+        Backend["Backend /metrics"]
+        Containers["Containers Docker"]
+        Host["Host (proc/sys)"]
+        Postgres[("PostgreSQL")]
+        Redis[("Redis")]
+    end
+
+    subgraph Coleta
+        PGExp["postgres-exporter"]
+        RedisExp["redis-exporter"]
+        CAdvisor["cAdvisor"]
+        NodeExp["node-exporter"]
+        Promtail["Promtail"]
+    end
+
+    Prometheus[("Prometheus")]
+    Loki[("Loki")]
+    Grafana["Grafana"]
+
+    Backend --> Prometheus
+    Postgres --> PGExp --> Prometheus
+    Redis --> RedisExp --> Prometheus
+    Containers --> CAdvisor --> Prometheus
+    Host --> NodeExp --> Prometheus
+    Containers -- "logs (docker socket)" --> Promtail --> Loki
+
+    Prometheus --> Grafana
+    Loki --> Grafana
+```
+
+- **Promtail** descobre os containers via `docker_sd_configs` (socket do Docker) e envia os logs ao Loki, rotulados por `service` (label `com.docker.compose.service`, definida automaticamente pelo Compose) e `level` (extraído do JSON estruturado dos logs).
+- **Grafana** já sobe com os datasources Prometheus/Loki e o dashboard "InfraHub - Visão Geral" provisionados como código (`infra/grafana/provisioning/`, `infra/grafana/dashboards/`), sem setup manual.
+- **Portainer** e **Uptime Kuma** cobrem administração visual de containers e monitoramento de disponibilidade, mas não têm provisionamento declarativo confiável — o setup inicial de admin é manual (ver README).
 
 ## Preparação para Kubernetes
 
