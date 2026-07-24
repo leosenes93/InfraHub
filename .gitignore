@@ -1,0 +1,38 @@
+# --- Python / Backend ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# --- Node / Frontend ---
+node_modules/
+dist/
+.vite/
+*.local
+*.tsbuildinfo
+
+# --- Environment ---
+.env
+.env.*
+!.env.example
+
+# --- Docker ---
+*.log
+
+# --- IDEs ---
+.idea/
+.vscode/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Uploads / runtime data (mounted volumes) ---
+storage/uploads/*
+!storage/uploads/.gitkeep
