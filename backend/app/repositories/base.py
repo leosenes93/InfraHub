@@ -25,3 +25,12 @@ class BaseRepository[ModelType: Base]:
         self.db.commit()
         self.db.refresh(entity)
         return entity
+
+    def update(self, entity: ModelType) -> ModelType:
+        self.db.commit()
+        self.db.refresh(entity)
+        return entity
+
+    def delete(self, entity: ModelType) -> None:
+        self.db.delete(entity)
+        self.db.commit()

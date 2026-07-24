@@ -64,6 +64,13 @@ Esse desenho segue os princípios SOLID: cada camada tem uma única responsabili
 - Quatro perfis: **Administrador**, **Analista**, **Operador**, **Visualizador** (`app/models/user.py::UserRole`). Na Fase 1 apenas o Administrador tem rotas exclusivas (`GET/POST /users`); os demais perfis serão usados pelos módulos de negócio nas próximas fases.
 - Um usuário administrador inicial é criado automaticamente no primeiro start (lifespan do FastAPI), a partir de `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` no `.env`.
 
+## Inventário de ativos (Fase 3)
+
+- Modelo único `Asset` (`app/models/asset.py`) para os cinco tipos de ativo (Servidor, VM, Equipamento de Rede, Container, Aplicação), com campos comuns em colunas normais e os campos específicos de cada tipo em uma coluna `attributes` (JSONB). Evita 5 tabelas quase-duplicadas nesta fase e mantém uma única migration.
+- A validação de que `attributes` bate com o `asset_type` acontece na camada de schema (`app/schemas/asset.py`), com um Pydantic model por tipo (ex.: `ServerAttributes`, `NetworkDeviceAttributes`) selecionado dinamicamente por um `model_validator`. Isso mantém o banco flexível sem abrir mão de validação forte na API.
+- Segue exatamente o mesmo padrão de camadas dos usuários: `AssetRepository`/`AssetService`/`api/v1/assets.py`, reaproveitando `BaseRepository` (agora também com `update`/`delete` genéricos) e a dependency `require_roles` já existente.
+- RBAC: leitura liberada para qualquer usuário autenticado; criar/editar exige Administrador, Analista ou Operador; excluir exige Administrador.
+
 ## Observabilidade (Fase 1 + Fase 2)
 
 - **Logs estruturados**: todo log é emitido em JSON (`app/core/logging.py`), e cada requisição HTTP é registrada com `request_id`, método, path, status e duração (`app/middleware/logging_middleware.py`).

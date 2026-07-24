@@ -2,7 +2,7 @@
 
 Plataforma web para gestão de infraestrutura de TI em ambientes corporativos — inventário, documentação técnica, monitoramento e administração de ativos centralizados em um único sistema.
 
-> **Status:** Fase 2 — observabilidade e administração. Veja o [roadmap completo](docs/roadmap.md).
+> **Status:** Fase 3 — inventário de ativos. Veja o [roadmap completo](docs/roadmap.md).
 
 ## Stack
 
@@ -93,13 +93,19 @@ Isso sobe, combinado ao `docker-compose.yml`: Prometheus, Grafana, Loki, Promtai
 
 O endpoint `/metrics` do backend não é exposto pelo Nginx (que só faz proxy de `/api/` e `/`) — só é alcançável dentro da rede Docker interna, por isso não requer autenticação própria.
 
+## Inventário de ativos
+
+Acesse `http://localhost:8080/inventory` (autenticado) para gerenciar Servidores, Máquinas Virtuais, Equipamentos de Rede, Containers e Aplicações — uma página unificada com filtro por tipo, busca e formulário que adapta os campos ao tipo de ativo selecionado. O dashboard (`/`) mostra contagens reais por tipo e status.
+
+API: `GET/POST /api/v1/assets`, `GET/PATCH/DELETE /api/v1/assets/{id}`, `GET /api/v1/assets/summary` — ver RBAC abaixo para quem pode criar/editar/excluir.
+
 ## Papéis de acesso (RBAC)
 
 | Perfil | Descrição |
 | --- | --- |
-| Administrador | Acesso total, incluindo gestão de usuários |
-| Analista | Acesso de análise/edição avançada (módulos futuros) |
-| Operador | Operações do dia a dia sobre os ativos (módulos futuros) |
+| Administrador | Acesso total, incluindo gestão de usuários e exclusão de ativos |
+| Analista | Lê e cria/edita ativos do inventário |
+| Operador | Lê e cria/edita ativos do inventário |
 | Visualizador | Somente leitura |
 
 ## Variáveis de ambiente

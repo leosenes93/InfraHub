@@ -1,14 +1,14 @@
 import { type ReactNode } from "react";
+import { NavLink } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
 
-const NAV_ITEMS = [
-  { label: "Dashboard", href: "/", active: true },
-  { label: "Inventário", href: "#", active: false },
-  { label: "Wiki Técnica", href: "#", active: false },
-  { label: "Monitoramento", href: "#", active: false },
-  { label: "Auditoria", href: "#", active: false },
+const NAV_LINKS = [
+  { label: "Dashboard", to: "/" },
+  { label: "Inventário", to: "/inventory" },
 ];
+
+const DISABLED_NAV_ITEMS = ["Wiki Técnica", "Monitoramento", "Auditoria"];
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -21,19 +21,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <span className="text-lg font-semibold text-slate-900">InfraHub</span>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {NAV_ITEMS.map((item) => (
-            <a
+          {NAV_LINKS.map((item) => (
+            <NavLink
               key={item.label}
-              href={item.href}
-              className={`block rounded-md px-3 py-2 text-sm font-medium ${
-                item.active
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-slate-400 cursor-not-allowed"
-              }`}
-              title={item.active ? undefined : "Disponível em uma próxima fase"}
+              to={item.to}
+              end={item.to === "/"}
+              className={({ isActive }) =>
+                `block rounded-md px-3 py-2 text-sm font-medium ${
+                  isActive ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-50"
+                }`
+              }
             >
               {item.label}
-            </a>
+            </NavLink>
+          ))}
+          {DISABLED_NAV_ITEMS.map((label) => (
+            <span
+              key={label}
+              className="block cursor-not-allowed rounded-md px-3 py-2 text-sm font-medium text-slate-400"
+              title="Disponível em uma próxima fase"
+            >
+              {label}
+            </span>
           ))}
         </nav>
       </aside>

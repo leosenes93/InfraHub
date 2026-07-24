@@ -12,3 +12,7 @@ class EmailAlreadyExistsError(DomainError):
 
 class InactiveUserError(DomainError):
     pass
+
+
+class AssetNotFoundError(DomainError):
+    pass

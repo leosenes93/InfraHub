@@ -21,11 +21,12 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 - **Uptime Kuma**: monitoramento de disponibilidade dos serviços (monitores configurados manualmente).
 - `docker-compose.monitoring.yml`, acoplável ao ambiente principal via `scripts/monitoring.sh` / `.ps1`.
 
-## Fase 3 — Inventário de ativos
+## Fase 3 — Inventário de ativos ✅
 
-- Modelagem de Servidores, Máquinas Virtuais, Equipamentos de Rede, Containers e Aplicações.
-- CRUD completo com RBAC por operação (ex.: Visualizador só lê, Operador edita, Administrador tudo).
-- Dashboard real substituindo os indicadores mockados da Fase 1.
+- Modelo único `assets` (Servidores, Máquinas Virtuais, Equipamentos de Rede, Containers e Aplicações) com atributos específicos por tipo em JSONB, validados via Pydantic.
+- CRUD completo com RBAC por operação: Visualizador só lê; Operador e Analista leem/criam/editam; Administrador tudo, incluindo excluir.
+- Página de Inventário no frontend com filtro por tipo, busca e formulário adaptável por tipo de ativo.
+- Dashboard real (contagens por tipo/status via `GET /assets/summary`), substituindo os indicadores mockados da Fase 1.
 
 ## Fase 4 — Wiki técnica e documentação de ativos
 
