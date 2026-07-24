@@ -1,0 +1,59 @@
+# Valores padrão do chart InfraHub.
+# Troque os valores marcados como "change-me" antes de usar em produção
+# (idealmente via um values-secrets.yaml separado, não versionado, ou --set).
+
+image:
+  backend:
+    repository: infrahub-backend
+    tag: prod
+    pullPolicy: IfNotPresent
+  web:
+    repository: infrahub-web
+    tag: prod
+    pullPolicy: IfNotPresent
+
+replicaCount:
+  backend: 1
+  web: 1
+
+backend:
+  port: 8000
+
+web:
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: infrahub.local
+
+postgres:
+  image: postgres:16-alpine
+  user: infrahub
+  password: change-me
+  database: infrahub
+  storageSize: 1Gi
+
+redis:
+  image: redis:7-alpine
+
+uploads:
+  storageSize: 1Gi
+
+env:
+  environment: production
+  projectName: InfraHub
+  apiV1Prefix: /api/v1
+  logLevel: INFO
+  jwtAlgorithm: HS256
+  jwtAccessTokenExpireMinutes: "60"
+  jwtRefreshTokenExpireDays: "7"
+  initialAdminEmail: admin@infrahub.io
+  initialAdminFullName: Administrador InfraHub
+  corsOrigins: '["http://infrahub.local"]'
+  maxUploadSizeMb: "10"
+
+# Valores sensíveis — troque antes de qualquer uso real.
+secrets:
+  jwtSecretKey: change-this-to-a-long-random-secret
+  initialAdminPassword: change-me

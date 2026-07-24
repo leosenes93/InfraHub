@@ -42,11 +42,12 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 - **Busca global**: `GET /search` combina `ILIKE` com `similarity()` (extensão `pg_trgm` do Postgres) sobre nome/descrição dos ativos; campo de busca no cabeçalho, disponível em qualquer página.
 - Integração com Zabbix/Prometheus para status/alertas de ativos externos permanece como item futuro (fora do escopo desta fase).
 
-## Fase 6 — Preparação para Kubernetes
+## Fase 6 — Preparação para Kubernetes ✅
 
-- Helm charts ou manifests Kustomize equivalentes aos serviços do Compose.
-- Externalização de configuração via ConfigMap/Secret.
-- Probes de liveness/readiness reaproveitando os endpoints `/health` e `/health/ready`.
+- Chart Helm em `k8s/infrahub/` para o núcleo da aplicação (backend, web/Nginx, Postgres, Redis) — ver [docs/kubernetes.md](kubernetes.md) para o mapeamento completo Compose → Kubernetes.
+- Configuração externalizada via `ConfigMap`/`Secret`; probes de liveness/readiness reaproveitando `/api/v1/health` e `/api/v1/health/ready`.
+- Validado com uma instalação real em um cluster `kind` descartável (não só `helm lint`/`template`) — encontrou e corrigiu dois bugs reais, incluindo uma condição de corrida no seed do admin inicial que já existia desde a Fase 1 no `docker-compose.prod.yml`.
+- Observabilidade (Prometheus/Grafana/Loki/Portainer/Uptime Kuma) e integração Zabbix/Prometheus permanecem fora do escopo — produção real usaria charts prontos (ex.: `kube-prometheus-stack`) para a primeira.
 
 ---
 

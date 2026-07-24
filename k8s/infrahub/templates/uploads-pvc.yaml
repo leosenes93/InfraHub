@@ -1,0 +1,14 @@
+# ReadWriteOnce: adequado para 1 réplica do backend (padrão desta fase).
+# Múltiplas réplicas exigiriam um volume RWX (ex.: NFS) ou armazenamento
+# de objeto (S3/MinIO) — ver docs/kubernetes.md.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "infrahub.fullname" . }}-uploads
+  labels:
+    {{- include "infrahub.labels" . | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.uploads.storageSize }}

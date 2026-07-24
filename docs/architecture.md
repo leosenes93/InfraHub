@@ -131,11 +131,15 @@ flowchart LR
 - **Grafana** já sobe com os datasources Prometheus/Loki e o dashboard "InfraHub - Visão Geral" provisionados como código (`infra/grafana/provisioning/`, `infra/grafana/dashboards/`), sem setup manual.
 - **Portainer** e **Uptime Kuma** cobrem administração visual de containers e monitoramento de disponibilidade, mas não têm provisionamento declarativo confiável — o setup inicial de admin é manual (ver README).
 
-## Preparação para Kubernetes
+## Kubernetes (Fase 6)
 
-Decisões da Fase 1 que facilitam uma futura migração:
+Decisões da Fase 1 que facilitaram a migração, hoje concretizada no chart Helm `k8s/infrahub/` (mapeamento completo em [docs/kubernetes.md](kubernetes.md)):
 
-- Configuração 100% via variáveis de ambiente (12-factor), sem estado em arquivo local.
-- Backend stateless (sessões JWT, sem sessão de servidor); Postgres e Redis são os únicos serviços com estado.
-- Health checks HTTP dedicados, mapeáveis diretamente para `livenessProbe`/`readinessProbe`.
-- Imagens Docker com estágios `dev`/`prod` — o estágio `prod` é o candidato a virar a imagem publicada em um registry para deploy em K8s.
+- Configuração 100% via variáveis de ambiente (12-factor), sem estado em arquivo local — vira `ConfigMap`/`Secret` sem mudança de código.
+- Backend stateless (sessões JWT, sem sessão de servidor); Postgres e Redis são os únicos serviços com estado — viram `StatefulSet`/`Deployment` sem alterar a aplicação.
+- Health checks HTTP dedicados, mapeados diretamente para `livenessProbe`/`readinessProbe`.
+- Imagens Docker com estágios `dev`/`prod` — o estágio `prod` é reaproveitado tal e qual no chart, sem imagem nova.
+
+Duas descobertas reais ao validar o chart com uma instalação de verdade (não só `helm lint`), documentadas em detalhe em `docs/kubernetes.md`:
+- A configuração de produção do Nginx (`resolver 127.0.0.11`, específica do DNS interno do Docker) não funciona em Kubernetes — o chart monta uma variante via `ConfigMap` que dispensa esse resolver, já que o `Service` do backend tem `ClusterIP` estável.
+- Uma condição de corrida no seed do usuário administrador inicial (`UserService.ensure_initial_admin`), presente desde a Fase 1 sempre que múltiplos processos Uvicorn (`--workers 4`) sobem ao mesmo tempo — só se manifestou de forma clara nesta fase, mas afetava também `docker-compose.prod.yml`. Corrigida tratando a violação de unicidade como não-erro.

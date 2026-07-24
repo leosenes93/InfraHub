@@ -1,0 +1,6 @@
+apiVersion: v2
+name: infrahub
+description: Plataforma de gestão de infraestrutura de TI — núcleo da aplicação (backend, web, Postgres, Redis)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

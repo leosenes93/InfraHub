@@ -1,3 +1,4 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
@@ -36,4 +37,9 @@ class UserService:
             role=UserRole.ADMIN,
             hashed_password=hash_password(password),
         )
-        self.repository.add(admin)
+        try:
+            self.repository.add(admin)
+        except IntegrityError:
+            # Outro worker/replica venceu a mesma corrida de seed no startup
+            # (comum com --workers > 1 ou multiplas replicas subindo juntas).
+            self.repository.db.rollback()

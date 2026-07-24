@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "infrahub.fullname" . }}-config
+  labels:
+    {{- include "infrahub.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.env.environment | quote }}
+  PROJECT_NAME: {{ .Values.env.projectName | quote }}
+  API_V1_PREFIX: {{ .Values.env.apiV1Prefix | quote }}
+  LOG_LEVEL: {{ .Values.env.logLevel | quote }}
+  POSTGRES_USER: {{ .Values.postgres.user | quote }}
+  POSTGRES_DB: {{ .Values.postgres.database | quote }}
+  POSTGRES_HOST: {{ include "infrahub.fullname" . }}-postgres
+  POSTGRES_PORT: "5432"
+  REDIS_HOST: {{ include "infrahub.fullname" . }}-redis
+  REDIS_PORT: "6379"
+  REDIS_URL: redis://{{ include "infrahub.fullname" . }}-redis:6379/0
+  JWT_ALGORITHM: {{ .Values.env.jwtAlgorithm | quote }}
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: {{ .Values.env.jwtAccessTokenExpireMinutes | quote }}
+  JWT_REFRESH_TOKEN_EXPIRE_DAYS: {{ .Values.env.jwtRefreshTokenExpireDays | quote }}
+  BACKEND_CORS_ORIGINS: {{ .Values.env.corsOrigins | quote }}
+  INITIAL_ADMIN_EMAIL: {{ .Values.env.initialAdminEmail | quote }}
+  INITIAL_ADMIN_FULL_NAME: {{ .Values.env.initialAdminFullName | quote }}
+  MAX_UPLOAD_SIZE_MB: {{ .Values.env.maxUploadSizeMb | quote }}
+  UPLOADS_DIR: /app/storage/uploads

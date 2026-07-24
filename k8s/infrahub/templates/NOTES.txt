@@ -1,0 +1,21 @@
+InfraHub foi instalado ({{ .Release.Name }} / namespace {{ .Release.Namespace }}).
+
+{{- if .Values.ingress.enabled }}
+Acesse via Ingress em: http://{{ .Values.ingress.host }}
+(adicione uma entrada em /etc/hosts apontando {{ .Values.ingress.host }} para o IP do Ingress
+Controller se estiver testando localmente, ex.: com kind ou minikube.)
+{{- else }}
+Ingress desabilitado. Use "kubectl port-forward svc/{{ include "infrahub.fullname" . }}-web 8080:80"
+para acessar em http://localhost:8080.
+{{- end }}
+
+Login inicial (definido em values.env.initialAdminEmail / values.secrets.initialAdminPassword):
+  e-mail: {{ .Values.env.initialAdminEmail }}
+  senha:  (valor de values.secrets.initialAdminPassword)
+
+⚠️  ATENÇÃO: os valores padrão deste chart (senha do Postgres, JWT_SECRET_KEY, senha do
+admin inicial) são placeholders "change-me" — troque-os via --set ou um arquivo de values
+próprio antes de usar em qualquer ambiente real.
+
+Para acompanhar o rollout:
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}

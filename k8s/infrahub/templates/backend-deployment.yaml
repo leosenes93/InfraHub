@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "infrahub.fullname" . }}-backend
+  labels:
+    {{- include "infrahub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.replicaCount.backend }}
+  selector:
+    matchLabels:
+      {{- include "infrahub.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "infrahub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}"
+          imagePullPolicy: {{ .Values.image.backend.pullPolicy }}
+          # Sem "command" proposital: usa o ENTRYPOINT da propria imagem
+          # (docker-entrypoint.sh), que roda "alembic upgrade head" antes de
+          # subir o uvicorn — mesmo comportamento do Docker Compose. Com
+          # replicas > 1 isso executa a migracao em paralelo em cada Pod;
+          # como "alembic upgrade head" e idempotente isso e seguro, mas para
+          # producao com varias replicas o ideal e migrar via um Job dedicado
+          # rodado antes do rollout — ver docs/kubernetes.md.
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "infrahub.fullname" . }}-config
+            - secretRef:
+                name: {{ include "infrahub.fullname" . }}-secret
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/storage/uploads
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.env.apiV1Prefix }}/health/ready
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.env.apiV1Prefix }}/health
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: {{ include "infrahub.fullname" . }}-uploads

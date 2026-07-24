@@ -2,7 +2,7 @@
 
 Plataforma web para gestão de infraestrutura de TI em ambientes corporativos — inventário, documentação técnica, monitoramento e administração de ativos centralizados em um único sistema.
 
-> **Status:** Fase 5 — integrações e automações. Veja o [roadmap completo](docs/roadmap.md).
+> **Status:** Fase 6 — preparação para Kubernetes. Veja o [roadmap completo](docs/roadmap.md).
 
 ## Stack
 
@@ -27,6 +27,7 @@ InfraHub/
 ├── backend/    # API FastAPI (api / services / repositories / models)
 ├── frontend/   # SPA React + Vite + Tailwind
 ├── infra/      # Nginx, Prometheus, Loki, Promtail, Grafana (provisioning + dashboards)
+├── k8s/        # Chart Helm (núcleo da aplicação em Kubernetes)
 ├── docs/       # Documentação e diagramas
 ├── scripts/    # Scripts de dev/produção/observabilidade
 └── .github/    # Workflows de CI
@@ -115,6 +116,19 @@ Os arquivos ficam em `storage/uploads/<asset_id>/` (volume Docker, fora do contr
 - **Busca global** — campo no cabeçalho (qualquer página), busca ativos por nome/descrição usando `pg_trgm` do Postgres (tolerante a pequenas variações/erros de digitação). `GET /api/v1/search?q=`.
 
 **Nota de segurança:** o socket do Docker é montado somente leitura no backend (mesma lógica já aplicada ao cAdvisor/Promtail na Fase 2) — suficiente para listar containers, mas ainda expõe informações do host; mantenha essa montagem restrita a ambientes de confiança.
+
+## Kubernetes
+
+O núcleo da aplicação também roda em Kubernetes via o chart Helm em [`k8s/infrahub/`](k8s/infrahub/):
+
+```bash
+helm install infrahub k8s/infrahub \
+  --set postgres.password=<senha-forte> \
+  --set secrets.jwtSecretKey=<chave-longa-aleatoria> \
+  --set secrets.initialAdminPassword=<senha-forte>
+```
+
+Veja [docs/kubernetes.md](docs/kubernetes.md) para o mapeamento completo Compose → Kubernetes, pré-requisitos e limitações conhecidas.
 
 ## Papéis de acesso (RBAC)
 

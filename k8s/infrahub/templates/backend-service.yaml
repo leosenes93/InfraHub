@@ -1,0 +1,19 @@
+# Nome fixo "backend" (sem prefixo do release): a imagem de producao do
+# Nginx (infra/nginx/Dockerfile.prod) tem esse hostname hardcoded no proxy
+# /api/ (ver files/nginx-default.conf). Limitacao conhecida: dois releases
+# deste chart no mesmo namespace colidiriam neste Service — ver docs/kubernetes.md.
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    {{- include "infrahub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  selector:
+    {{- include "infrahub.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: {{ .Values.backend.port }}
