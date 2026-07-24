@@ -59,28 +59,29 @@ class ZabbixService:
             {
                 "output": ["hostid", "host", "status"],
                 "hostids": [zabbix_host_id],
-                "selectInterfaces": ["available"],
             },
         )
         if not hosts:
             return {"host_name": None, "available": None, "problems": []}
 
         host = hosts[0]
-        available = self._resolve_availability(host.get("interfaces", []))
+        available = self._get_icmp_availability(zabbix_host_id)
         problems = self._get_problems(zabbix_host_id)
 
         return {"host_name": host["host"], "available": available, "problems": problems}
 
-    @staticmethod
-    def _resolve_availability(interfaces: list[dict]) -> bool | None:
-        if not interfaces:
+    def _get_icmp_availability(self, zabbix_host_id: str) -> bool | None:
+        items = self._call(
+            "item.get",
+            {
+                "output": ["lastvalue"],
+                "hostids": [zabbix_host_id],
+                "filter": {"key_": "icmpping"},
+            },
+        )
+        if not items or items[0]["lastvalue"] == "":
             return None
-        statuses = {iface["available"] for iface in interfaces}
-        if "2" in statuses:
-            return False
-        if "1" in statuses:
-            return True
-        return None
+        return items[0]["lastvalue"] == "1"
 
     def _get_problems(self, zabbix_host_id: str) -> list[ZabbixProblem]:
         problems_raw = self._call(

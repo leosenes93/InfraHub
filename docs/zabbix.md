@@ -78,6 +78,26 @@ A partir de qualquer um dos dois caminhos, a página do ativo passa a mostrar di
 
 **Limitação conhecida**: excluir um ativo no InfraHub não remove o host correspondente no Zabbix (são sistemas desacoplados de propósito) — se necessário, remova o host manualmente pela UI do Zabbix.
 
+### Por que a disponibilidade é lida do item `icmpping`, não da interface do agente
+
+`ZabbixService.get_host_status` calcula o badge de disponibilidade a partir do último valor do item `icmpping` (criado pelo template ICMP Ping, presente em todo host criado pelo InfraHub), em vez do campo `interface.available` da API. Descoberto validando com um host real: esse campo só é atualizado por *checks passivos* clássicos (servidor → agente); hosts monitorados via *active checks* (agente → servidor, o modo mais simples de liberar em firewall, ver seção seguinte) ou só por checks simples (ICMP) nunca atualizam esse campo — o badge ficaria travado em "Status desconhecido" para sempre, mesmo com o host saudável e reportando dados reais.
+
+## Instalando o Zabbix Agent numa VM (ex.: as VMs do Hyper-V)
+
+Para métricas reais (CPU, memória, disco, serviços) além do ping, instale o Zabbix Agent 2 na VM:
+
+1. Baixe o instalador MSI (Windows) compatível com a versão do servidor (7.0.x) em `https://cdn.zabbix.com/zabbix/binaries/stable/7.0/<versao>/zabbix_agent2-<versao>-windows-amd64-openssl.msi`.
+2. Instale em modo silencioso apontando para o IP do host que roda o Docker (o `zabbix-server` publica a porta `10051` nele):
+   ```powershell
+   msiexec /i zabbix_agent2.msi /qn SERVER=<IP do host Docker> SERVERACTIVE=<IP do host Docker> HOSTNAME=<nome do host no Zabbix>
+   ```
+   `HOSTNAME` precisa bater exatamente com o campo técnico `host` do host no Zabbix (o mesmo nome usado ao criar o ativo, sanitizado).
+3. **Active checks** (agente conecta no servidor, porta 10051) evitam mexer no firewall da VM — é o caminho mais simples. Para habilitar também *passive checks* (servidor conecta no agente, porta 10050), libere a porta no firewall do Windows:
+   ```powershell
+   New-NetFirewallRule -DisplayName "Zabbix Agent 2 (TCP 10050)" -Direction Inbound -Protocol TCP -LocalPort 10050 -Action Allow
+   ```
+4. Aplique um template de agente (ex.: **Windows by Zabbix agent active**) ao host no Zabbix, além do ICMP Ping já aplicado automaticamente — isso não tem UI própria no InfraHub ainda, faça via `host.update` na API do Zabbix ou pela UI web.
+
 ## Segurança
 
 - Credenciais padrão (`Admin` / `zabbix`) **devem** ser trocadas antes de expor a interface do Zabbix além da rede local — a imagem oficial não força a troca no primeiro acesso.
