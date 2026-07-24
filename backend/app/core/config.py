@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     uploads_dir: str = "storage/uploads"
     max_upload_size_mb: int = 10
 
+    zabbix_api_url: str = "http://zabbix-web:8080/api_jsonrpc.php"
+    zabbix_api_token: str = ""
+
     @property
     def cors_origins(self) -> list[str]:
         try:

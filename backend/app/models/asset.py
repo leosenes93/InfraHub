@@ -52,3 +52,4 @@ class Asset(TimestampedModel):
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     documentation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    zabbix_host_id: Mapped[str | None] = mapped_column(String(64), nullable=True)

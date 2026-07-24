@@ -11,6 +11,7 @@ import {
   uploadAttachment,
   type Attachment,
 } from "@/api/attachments";
+import { getAssetMonitoring } from "@/api/zabbix";
 import { AssetFormModal } from "@/components/inventory/AssetFormModal";
 import { AssetStatusBadge } from "@/components/inventory/AssetStatusBadge";
 import { AssetTypeBadge } from "@/components/inventory/AssetTypeBadge";
@@ -46,6 +47,13 @@ export function AssetDetail() {
     queryKey: ["attachments", assetId],
     queryFn: () => listAttachments(assetId!),
     enabled: Boolean(assetId),
+  });
+
+  const { data: monitoring, isError: isMonitoringError } = useQuery({
+    queryKey: ["monitoring", assetId],
+    queryFn: () => getAssetMonitoring(assetId!),
+    enabled: Boolean(assetId),
+    refetchInterval: 30_000,
   });
 
   const updateMutation = useMutation({
@@ -92,6 +100,7 @@ export function AssetDetail() {
       tags: asset.tags,
       attributes: asset.attributes,
       documentation: docsDraft,
+      zabbix_host_id: asset.zabbix_host_id,
     });
   }
 
@@ -200,6 +209,61 @@ export function AssetDetail() {
           <p className="text-sm text-slate-500">
             Nenhuma documentação cadastrada ainda{canWrite ? " — clique em Editar para começar." : "."}
           </p>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-6">
+        <h3 className="mb-4 text-sm font-semibold text-slate-700">Monitoramento</h3>
+        {isMonitoringError ? (
+          <p className="text-sm text-red-600">
+            Não foi possível consultar o Zabbix agora. Tente novamente em instantes.
+          </p>
+        ) : !monitoring || !monitoring.linked ? (
+          <p className="text-sm text-slate-500">
+            Ativo não vinculado a um host do Zabbix
+            {canWrite ? ' — informe o "ID do host no Zabbix" em Editar ativo.' : "."}
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  monitoring.available === true
+                    ? "bg-emerald-100 text-emerald-700"
+                    : monitoring.available === false
+                      ? "bg-red-100 text-red-700"
+                      : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {monitoring.available === true
+                  ? "Disponível"
+                  : monitoring.available === false
+                    ? "Indisponível"
+                    : "Status desconhecido"}
+              </span>
+              <span className="text-sm text-slate-600">
+                {monitoring.host_name ?? monitoring.zabbix_host_id}
+              </span>
+            </div>
+
+            {monitoring.problems.length > 0 ? (
+              <ul className="space-y-2">
+                {monitoring.problems.map((problem, index) => (
+                  <li
+                    key={index}
+                    className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                  >
+                    <span className="font-medium">[{problem.severity}]</span> {problem.name}
+                    <span className="ml-2 text-xs text-amber-600">
+                      desde {new Date(problem.since).toLocaleString("pt-BR")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-500">Nenhum problema ativo.</p>
+            )}
+          </div>
         )}
       </div>
 

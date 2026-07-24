@@ -143,3 +143,13 @@ Decisões da Fase 1 que facilitaram a migração, hoje concretizada no chart Hel
 Duas descobertas reais ao validar o chart com uma instalação de verdade (não só `helm lint`), documentadas em detalhe em `docs/kubernetes.md`:
 - A configuração de produção do Nginx (`resolver 127.0.0.11`, específica do DNS interno do Docker) não funciona em Kubernetes — o chart monta uma variante via `ConfigMap` que dispensa esse resolver, já que o `Service` do backend tem `ClusterIP` estável.
 - Uma condição de corrida no seed do usuário administrador inicial (`UserService.ensure_initial_admin`), presente desde a Fase 1 sempre que múltiplos processos Uvicorn (`--workers 4`) sobem ao mesmo tempo — só se manifestou de forma clara nesta fase, mas afetava também `docker-compose.prod.yml`. Corrigida tratando a violação de unicidade como não-erro.
+
+## Integração Zabbix (Fase 7)
+
+Detalhamento completo (arquitetura, TimescaleDB, como gerar o token de API, como vincular um ativo) em [docs/zabbix.md](zabbix.md). Resumo do desenho:
+
+- Stack acoplável `docker-compose.zabbix.yml` (mesmo padrão do `docker-compose.monitoring.yml`): Postgres dedicado com TimescaleDB, `zabbix-server`, `zabbix-web` e um `zabbix-agent2` de exemplo. A porta trapper (`10051`) fica exposta no host para futuros agentes em VMs no Hyper-V.
+- Vínculo manual ativo ↔ host do Zabbix: novo campo `zabbix_host_id` em `Asset` (migration `0006`), preenchido opcionalmente no formulário de edição — sem sincronização automática de hosts, deliberadamente fora de escopo.
+- `ZabbixService` (`app/services/zabbix_service.py`) fala JSON-RPC 2.0 com a API do Zabbix via `httpx`, autenticando com token (`Authorization: Bearer`) em vez do login usuário/senha legado. Erros de conexão ou de API viram `ZabbixUnavailableError` (→ 503); token não configurado retorna 503 com mensagem clara, sem derrubar o restante da aplicação.
+- Nova rota somente leitura `GET /assets/{asset_id}/monitoring` (`app/api/v1/monitoring.py`), liberada para qualquer usuário autenticado — mesma filosofia da rota de containers Docker da Fase 5: sem RBAC extra porque é informação de leitura, não uma ação sensível.
+- Frontend: seção "Monitoramento" na página do ativo, consultando o endpoint via React Query com `refetchInterval` de 30s — mostra disponibilidade (badge) e a lista de problemas ativos quando o ativo está vinculado.

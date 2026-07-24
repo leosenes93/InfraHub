@@ -67,6 +67,7 @@ class AssetBase(BaseModel):
     tags: list[str] = Field(default_factory=list)
     attributes: dict = Field(default_factory=dict)
     documentation: str | None = None
+    zabbix_host_id: str | None = Field(default=None, max_length=64)
 
     @model_validator(mode="after")
     def validate_attributes_for_type(self) -> "AssetBase":

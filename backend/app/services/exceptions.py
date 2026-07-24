@@ -32,3 +32,11 @@ class FileTooLargeError(DomainError):
 
 class DockerUnavailableError(DomainError):
     pass
+
+
+class ZabbixUnavailableError(DomainError):
+    pass
+
+
+class ZabbixNotConfiguredError(DomainError):
+    pass

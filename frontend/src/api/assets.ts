@@ -14,6 +14,7 @@ export interface Asset {
   tags: string[];
   attributes: Record<string, unknown>;
   documentation: string | null;
+  zabbix_host_id: string | null;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
@@ -29,6 +30,7 @@ export interface AssetPayload {
   tags?: string[];
   attributes: Record<string, unknown>;
   documentation?: string | null;
+  zabbix_host_id?: string | null;
 }
 
 export interface AssetListFilters {

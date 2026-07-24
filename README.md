@@ -2,7 +2,7 @@
 
 Plataforma web para gestão de infraestrutura de TI em ambientes corporativos — inventário, documentação técnica, monitoramento e administração de ativos centralizados em um único sistema.
 
-> **Status:** Fase 6 — preparação para Kubernetes. Veja o [roadmap completo](docs/roadmap.md).
+> **Status:** Fase 7 — integração com Zabbix. Veja o [roadmap completo](docs/roadmap.md).
 
 ## Stack
 
@@ -14,6 +14,7 @@ Plataforma web para gestão de infraestrutura de TI em ambientes corporativos �
 | Cache | Redis |
 | Proxy reverso | Nginx |
 | Observabilidade | Prometheus, Grafana, Loki, Promtail, cAdvisor, Node Exporter |
+| Monitoramento de infraestrutura | Zabbix (Postgres + TimescaleDB dedicado) |
 | Administração | Portainer, Uptime Kuma |
 | Orquestração | Docker Compose |
 | CI | GitHub Actions |
@@ -116,6 +117,20 @@ Os arquivos ficam em `storage/uploads/<asset_id>/` (volume Docker, fora do contr
 - **Busca global** — campo no cabeçalho (qualquer página), busca ativos por nome/descrição usando `pg_trgm` do Postgres (tolerante a pequenas variações/erros de digitação). `GET /api/v1/search?q=`.
 
 **Nota de segurança:** o socket do Docker é montado somente leitura no backend (mesma lógica já aplicada ao cAdvisor/Promtail na Fase 2) — suficiente para listar containers, mas ainda expõe informações do host; mantenha essa montagem restrita a ambientes de confiança.
+
+## Monitoramento com Zabbix
+
+Stack adicional e **acoplável** ao ambiente principal (mesmo padrão da observabilidade acima):
+
+```bash
+./scripts/zabbix.sh   # Linux/macOS
+# ou
+./scripts/zabbix.ps1  # Windows (PowerShell)
+```
+
+Isso sobe um Zabbix completo (servidor, interface web, agente de exemplo e Postgres dedicado com TimescaleDB). Interface web em `http://localhost:8082` (login inicial `Admin` / `zabbix` — troque antes de expor o ambiente). Depois de gerar um token de API e configurá-lo em `ZABBIX_API_TOKEN` no `.env`, qualquer ativo do inventário pode ser vinculado a um host do Zabbix (campo "ID do host no Zabbix" no formulário de edição) — a página do ativo passa a mostrar disponibilidade e problemas ativos ao vivo, via `GET /api/v1/assets/{id}/monitoring`.
+
+Veja [docs/zabbix.md](docs/zabbix.md) para a arquitetura completa, o passo a passo de geração do token de API e por que a porta `10051` fica exposta (preparação para agentes em VMs no Hyper-V).
 
 ## Kubernetes
 

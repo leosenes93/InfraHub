@@ -48,6 +48,7 @@ class AssetService:
             tags=data.tags,
             attributes=data.attributes,
             documentation=data.documentation,
+            zabbix_host_id=data.zabbix_host_id,
             owner_id=owner_id,
         )
         return self.repository.add(asset)
@@ -63,6 +64,7 @@ class AssetService:
         asset.tags = data.tags
         asset.attributes = data.attributes
         asset.documentation = data.documentation
+        asset.zabbix_host_id = data.zabbix_host_id
         return self.repository.update(asset)
 
     def delete_asset(self, asset_id: uuid.UUID) -> None:

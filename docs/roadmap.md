@@ -49,6 +49,14 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 - Validado com uma instalação real em um cluster `kind` descartável (não só `helm lint`/`template`) — encontrou e corrigiu dois bugs reais, incluindo uma condição de corrida no seed do admin inicial que já existia desde a Fase 1 no `docker-compose.prod.yml`.
 - Observabilidade (Prometheus/Grafana/Loki/Portainer/Uptime Kuma) e integração Zabbix/Prometheus permanecem fora do escopo — produção real usaria charts prontos (ex.: `kube-prometheus-stack`) para a primeira.
 
+## Fase 7 — Integração com Zabbix ✅
+
+- Stack acoplável `docker-compose.zabbix.yml` (Postgres + TimescaleDB dedicado, `zabbix-server`, `zabbix-web`, `zabbix-agent2` de exemplo) — ver [docs/zabbix.md](zabbix.md) para arquitetura completa e como gerar o token de API.
+- Vínculo manual ativo ↔ host do Zabbix (`zabbix_host_id`, migration `0006`), sem sincronização automática de hosts.
+- `GET /assets/{asset_id}/monitoring` traz disponibilidade e problemas ativos ao vivo da API do Zabbix; seção "Monitoramento" na página do ativo, atualizada a cada 30s.
+- Porta trapper (`10051`) exposta para receber, no futuro, agentes Zabbix instalados em VMs no Hyper-V (controlador de domínio, DNS etc.), fora do escopo deste repositório.
+- Validado de ponta a ponta com a stack real: hypertables confirmadas via `psql`, token de API gerado através do fluxo `token.create` → `token.generate`, e um ativo vinculado ao host embutido do Zabbix retornando status/problemas reais através do Nginx.
+
 ---
 
 Cada fase é discutida e aprovada antes da implementação, conforme o modelo incremental adotado no projeto.

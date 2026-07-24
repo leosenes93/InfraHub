@@ -162,6 +162,36 @@ def test_documentation_is_persisted_on_update(client):
     assert update_response.json()["documentation"].startswith("# Documentação")
 
 
+def test_zabbix_host_id_is_persisted_on_create_and_update(client):
+    token = _admin_token(client)
+    create_response = client.post(
+        "/api/v1/assets",
+        json={
+            "name": "srv-zabbix-link",
+            "asset_type": "server",
+            "attributes": {"hostname": "srv-zabbix-link"},
+            "zabbix_host_id": "10084",
+        },
+        headers=_auth_headers(token),
+    )
+    assert create_response.status_code == 201, create_response.text
+    asset_id = create_response.json()["id"]
+    assert create_response.json()["zabbix_host_id"] == "10084"
+
+    update_response = client.patch(
+        f"/api/v1/assets/{asset_id}",
+        json={
+            "name": "srv-zabbix-link",
+            "asset_type": "server",
+            "attributes": {"hostname": "srv-zabbix-link"},
+            "zabbix_host_id": "10085",
+        },
+        headers=_auth_headers(token),
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["zabbix_host_id"] == "10085"
+
+
 def test_viewer_cannot_create_asset(client):
     admin_token = _admin_token(client)
     _create_user(client, admin_token, "viewer.assets@infrahub.io", "viewer")

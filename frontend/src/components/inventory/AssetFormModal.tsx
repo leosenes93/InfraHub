@@ -43,6 +43,7 @@ export function AssetFormModal({ asset, onClose, onSubmit, isSubmitting, errorMe
   const [location, setLocation] = useState(asset?.location ?? "");
   const [description, setDescription] = useState(asset?.description ?? "");
   const [tags, setTags] = useState(asset?.tags.join(", ") ?? "");
+  const [zabbixHostId, setZabbixHostId] = useState(asset?.zabbix_host_id ?? "");
   const [attributeValues, setAttributeValues] = useState<Record<string, string>>(
     attributesToStrings(asset?.attributes ?? {})
   );
@@ -79,6 +80,7 @@ export function AssetFormModal({ asset, onClose, onSubmit, isSubmitting, errorMe
         .map((tag) => tag.trim())
         .filter(Boolean),
       attributes,
+      zabbix_host_id: zabbixHostId || null,
     });
   }
 
@@ -152,6 +154,15 @@ export function AssetFormModal({ asset, onClose, onSubmit, isSubmitting, errorMe
               <input
                 value={tags}
                 onChange={(event) => setTags(event.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>ID do host no Zabbix</label>
+              <input
+                value={zabbixHostId}
+                onChange={(event) => setZabbixHostId(event.target.value)}
+                placeholder="Opcional, ex: 10084"
                 className={inputClass}
               />
             </div>
