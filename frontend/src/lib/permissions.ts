@@ -7,3 +7,7 @@ export function canWriteAssets(role: UserRole | undefined): boolean {
 export function canDeleteAssets(role: UserRole | undefined): boolean {
   return role === "admin";
 }
+
+export function isAdmin(role: UserRole | undefined): boolean {
+  return role === "admin";
+}

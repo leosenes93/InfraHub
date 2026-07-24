@@ -28,3 +28,7 @@ class UnsupportedFileTypeError(DomainError):
 
 class FileTooLargeError(DomainError):
     pass
+
+
+class DockerUnavailableError(DomainError):
+    pass

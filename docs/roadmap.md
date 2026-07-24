@@ -35,12 +35,12 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 - RBAC: upload segue a mesma regra de escrita do inventário (Admin/Analista/Operador); exclusão de anexos restrita a Administrador.
 - Validação de tipo de arquivo (imagens, PDF, texto/Markdown) e tamanho máximo (10MB, configurável).
 
-## Fase 5 — Integrações e automações
+## Fase 5 — Integrações e automações ✅
 
-- Integração com Docker (listar containers locais do host via socket).
-- Integração futura com Zabbix e Prometheus para status/alertas de ativos externos.
-- Registro de auditoria (quem fez o quê, quando) para todas as ações sensíveis.
-- Busca global (provavelmente via índice em Postgres — `pg_trgm`/full text search — antes de considerar Elasticsearch).
+- **Docker**: `GET /docker/containers` lista os containers do host em tempo real via socket do Docker (montado somente leitura); página "Docker Local" no frontend.
+- **Auditoria**: tabela `audit_logs` registrando login (sucesso/falha), criação de usuário, criar/editar/excluir ativo e upload/exclusão de anexo — quem fez, quando, de qual IP. `GET /audit-logs` e página "Auditoria" restritos a Administrador.
+- **Busca global**: `GET /search` combina `ILIKE` com `similarity()` (extensão `pg_trgm` do Postgres) sobre nome/descrição dos ativos; campo de busca no cabeçalho, disponível em qualquer página.
+- Integração com Zabbix/Prometheus para status/alertas de ativos externos permanece como item futuro (fora do escopo desta fase).
 
 ## Fase 6 — Preparação para Kubernetes
 

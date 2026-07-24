@@ -79,6 +79,13 @@ Esse desenho segue os princípios SOLID: cada camada tem uma única responsabili
 - Validação de tipo de arquivo (allowlist) e tamanho máximo (`settings.max_upload_size_mb`) acontece no `AttachmentService`, antes de gravar em disco.
 - Testes usam um diretório de upload isolado por execução (fixture `_isolated_uploads_dir` em `tests/conftest.py`, via `monkeypatch` + `tmp_path`), para não escrever no `storage/uploads/` real do projeto.
 
+## Integrações e automações (Fase 5)
+
+- **Docker**: `app/core/docker_client.py` conecta ao socket do Docker (`unix://var/run/docker.sock`, montado somente leitura); `DockerService` traduz erros de conexão em `DockerUnavailableError` (→ 503), em vez de deixar vazar uma exceção da SDK. Rota somente leitura, sem RBAC além de estar autenticado.
+- **Auditoria**: `record_audit_event` (`app/services/audit_service.py`) é chamado explicitamente nas rotas — não dentro dos services de negócio — logo após cada ação sensível ter sucesso (login, criar usuário, criar/editar/excluir ativo, upload/exclusão de anexo). Essa escolha mantém `AssetService`/`UserService`/`AttachmentService` focados em regra de negócio, sem precisar saber quem é o "ator" da requisição ou nada sobre auditoria. `resource_id`/`resource_type` não têm FK rígida — o log de auditoria deve sobreviver à exclusão do recurso original.
+- **Busca global**: `AssetRepository.search` combina `ILIKE` com `similarity()` (extensão `pg_trgm`, habilitada na migration `0005`) para tolerar pequenas variações de digitação, ordenando por relevância (`GREATEST` das duas colunas). Escopo atual: nome/descrição de ativos; a resposta (`SearchResponse`) já é modelada para acomodar outros tipos de recurso no futuro.
+- Testes que dependem de `pg_trgm` exigem que a extensão esteja habilitada também no banco de teste — `tests/conftest.py` executa `CREATE EXTENSION IF NOT EXISTS pg_trgm` antes de `Base.metadata.create_all`, já que o schema de teste é criado a partir dos models (sem rodar as migrations Alembic).
+
 ## Observabilidade (Fase 1 + Fase 2)
 
 - **Logs estruturados**: todo log é emitido em JSON (`app/core/logging.py`), e cada requisição HTTP é registrada com `request_id`, método, path, status e duração (`app/middleware/logging_middleware.py`).

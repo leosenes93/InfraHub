@@ -1,4 +1,4 @@
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
 from app.models.asset import Asset, AssetStatus, AssetType
 from app.repositories.base import BaseRepository
@@ -35,3 +35,23 @@ class AssetRepository(BaseRepository[Asset]):
 
     def count_total(self) -> int:
         return self.db.scalar(select(func.count()).select_from(Asset)) or 0
+
+    def search(self, query: str, limit: int = 20) -> list[Asset]:
+        name_similarity = func.similarity(Asset.name, query)
+        description_similarity = func.similarity(func.coalesce(Asset.description, ""), query)
+        relevance = func.greatest(name_similarity, description_similarity)
+
+        stmt = (
+            select(Asset)
+            .where(
+                or_(
+                    Asset.name.ilike(f"%{query}%"),
+                    Asset.description.ilike(f"%{query}%"),
+                    name_similarity > 0.2,
+                    description_similarity > 0.2,
+                )
+            )
+            .order_by(relevance.desc())
+            .limit(limit)
+        )
+        return list(self.db.scalars(stmt))

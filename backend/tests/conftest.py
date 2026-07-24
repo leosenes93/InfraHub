@@ -8,7 +8,7 @@ os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from app.api.deps import get_db_session
@@ -22,6 +22,8 @@ TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=Fals
 
 @pytest.fixture(scope="session", autouse=True)
 def _prepare_database():
+    with engine.begin() as connection:
+        connection.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
     Base.metadata.create_all(engine)
     yield
     Base.metadata.drop_all(engine)

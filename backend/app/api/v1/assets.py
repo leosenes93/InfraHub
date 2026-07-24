@@ -8,6 +8,7 @@ from app.models.asset import Asset, AssetStatus, AssetType
 from app.models.user import User, UserRole
 from app.schemas.asset import AssetCreate, AssetRead, AssetSummary, AssetUpdate
 from app.services.asset_service import AssetService
+from app.services.audit_service import record_audit_event
 from app.services.exceptions import AssetNotFoundError
 
 router = APIRouter(prefix="/assets", tags=["assets"])
@@ -54,7 +55,16 @@ def create_asset(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db_session),
 ) -> Asset:
-    return AssetService(db).create_asset(data, owner_id=current_user.id)
+    asset = AssetService(db).create_asset(data, owner_id=current_user.id)
+    record_audit_event(
+        db,
+        action="asset.created",
+        actor=current_user,
+        resource_type="asset",
+        resource_id=asset.id,
+        details={"name": asset.name, "asset_type": asset.asset_type.value},
+    )
+    return asset
 
 
 @router.patch(
@@ -63,12 +73,25 @@ def create_asset(
     dependencies=[Depends(_can_write)],
 )
 def update_asset(
-    asset_id: uuid.UUID, data: AssetUpdate, db: Session = Depends(get_db_session)
+    asset_id: uuid.UUID,
+    data: AssetUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
 ) -> Asset:
     try:
-        return AssetService(db).update_asset(asset_id, data)
+        asset = AssetService(db).update_asset(asset_id, data)
     except AssetNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    record_audit_event(
+        db,
+        action="asset.updated",
+        actor=current_user,
+        resource_type="asset",
+        resource_id=asset.id,
+        details={"name": asset.name},
+    )
+    return asset
 
 
 @router.delete(
@@ -76,8 +99,22 @@ def update_asset(
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(_can_delete)],
 )
-def delete_asset(asset_id: uuid.UUID, db: Session = Depends(get_db_session)) -> None:
+def delete_asset(
+    asset_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+) -> None:
     try:
+        asset = AssetService(db).get_asset(asset_id)
         AssetService(db).delete_asset(asset_id)
     except AssetNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    record_audit_event(
+        db,
+        action="asset.deleted",
+        actor=current_user,
+        resource_type="asset",
+        resource_id=asset_id,
+        details={"name": asset.name},
+    )

@@ -2,7 +2,7 @@
 
 Plataforma web para gestão de infraestrutura de TI em ambientes corporativos — inventário, documentação técnica, monitoramento e administração de ativos centralizados em um único sistema.
 
-> **Status:** Fase 4 — wiki técnica e documentação de ativos. Veja o [roadmap completo](docs/roadmap.md).
+> **Status:** Fase 5 — integrações e automações. Veja o [roadmap completo](docs/roadmap.md).
 
 ## Stack
 
@@ -107,6 +107,14 @@ Cada ativo tem uma página de detalhe (`/inventory/{id}`, clique no nome na tabe
 - **Anexos** — upload de diagramas/documentos (imagens PNG/JPEG/SVG, PDF, texto/Markdown, até 10MB), listados com download e exclusão via `/api/v1/assets/{id}/attachments`.
 
 Os arquivos ficam em `storage/uploads/<asset_id>/` (volume Docker, fora do controle de versão — já reservado no `.gitignore`). Ao excluir um ativo, seus anexos em disco também são removidos.
+
+## Integrações e automações
+
+- **Docker Local** (`/docker`) — lista os containers em execução no host em tempo real, lidos via socket do Docker (montado somente leitura no backend). `GET /api/v1/docker/containers`.
+- **Auditoria** (`/audit`, só Administrador) — registro de login (sucesso/falha), criação de usuário e criar/editar/excluir ativos e anexos, com usuário, ação, recurso e IP. `GET /api/v1/audit-logs`.
+- **Busca global** — campo no cabeçalho (qualquer página), busca ativos por nome/descrição usando `pg_trgm` do Postgres (tolerante a pequenas variações/erros de digitação). `GET /api/v1/search?q=`.
+
+**Nota de segurança:** o socket do Docker é montado somente leitura no backend (mesma lógica já aplicada ao cAdvisor/Promtail na Fase 2) — suficiente para listar containers, mas ainda expõe informações do host; mantenha essa montagem restrita a ambientes de confiança.
 
 ## Papéis de acesso (RBAC)
 

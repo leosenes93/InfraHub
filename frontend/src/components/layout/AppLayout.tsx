@@ -2,16 +2,22 @@ import { type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { GlobalSearch } from "@/components/layout/GlobalSearch";
+import { isAdmin } from "@/lib/permissions";
 
 const NAV_LINKS = [
   { label: "Dashboard", to: "/" },
   { label: "Inventário", to: "/inventory" },
+  { label: "Docker Local", to: "/docker" },
 ];
 
-const DISABLED_NAV_ITEMS = ["Wiki Técnica", "Monitoramento", "Auditoria"];
+const DISABLED_NAV_ITEMS = ["Wiki Técnica", "Monitoramento"];
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
+  const navLinks = isAdmin(user?.role)
+    ? [...NAV_LINKS, { label: "Auditoria", to: "/audit" }]
+    : NAV_LINKS;
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -21,7 +27,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <span className="text-lg font-semibold text-slate-900">InfraHub</span>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {NAV_LINKS.map((item) => (
+          {navLinks.map((item) => (
             <NavLink
               key={item.label}
               to={item.to}
@@ -49,7 +55,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-          <h1 className="text-sm font-medium text-slate-500">Painel de Infraestrutura</h1>
+          <GlobalSearch />
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-medium text-slate-900">{user?.full_name}</p>

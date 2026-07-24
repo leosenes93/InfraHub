@@ -10,6 +10,7 @@ from app.models.user import User, UserRole
 from app.schemas.attachment import AttachmentRead
 from app.services.asset_service import AssetService
 from app.services.attachment_service import AttachmentService
+from app.services.audit_service import record_audit_event
 from app.services.exceptions import (
     AssetNotFoundError,
     AttachmentNotFoundError,
@@ -52,7 +53,9 @@ def upload_attachment(
 ) -> AssetAttachment:
     _ensure_asset_exists(asset_id, db)
     try:
-        return AttachmentService(db).save_upload(asset_id, file, uploaded_by_id=current_user.id)
+        attachment = AttachmentService(db).save_upload(
+            asset_id, file, uploaded_by_id=current_user.id
+        )
     except UnsupportedFileTypeError as exc:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(exc)
@@ -61,6 +64,16 @@ def upload_attachment(
         raise HTTPException(
             status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail=str(exc)
         ) from exc
+
+    record_audit_event(
+        db,
+        action="attachment.uploaded",
+        actor=current_user,
+        resource_type="asset",
+        resource_id=asset_id,
+        details={"filename": attachment.filename, "attachment_id": str(attachment.id)},
+    )
+    return attachment
 
 
 @router.get("/{attachment_id}/download", dependencies=[Depends(get_current_user)])
@@ -86,10 +99,23 @@ def download_attachment(
     dependencies=[Depends(_can_delete)],
 )
 def delete_attachment(
-    asset_id: uuid.UUID, attachment_id: uuid.UUID, db: Session = Depends(get_db_session)
+    asset_id: uuid.UUID,
+    attachment_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
 ) -> None:
     _ensure_asset_exists(asset_id, db)
     try:
+        attachment = AttachmentService(db).get_attachment(asset_id, attachment_id)
         AttachmentService(db).delete_attachment(asset_id, attachment_id)
     except AttachmentNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    record_audit_event(
+        db,
+        action="attachment.deleted",
+        actor=current_user,
+        resource_type="asset",
+        resource_id=asset_id,
+        details={"filename": attachment.filename, "attachment_id": str(attachment_id)},
+    )

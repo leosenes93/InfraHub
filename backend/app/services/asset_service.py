@@ -70,6 +70,9 @@ class AssetService:
         self.repository.delete(asset)
         delete_asset_upload_dir(asset_id)
 
+    def search_assets(self, query: str, limit: int = 20) -> list[Asset]:
+        return self.repository.search(query, limit=limit)
+
     def get_summary(self) -> AssetSummary:
         return AssetSummary(
             total=self.repository.count_total(),
