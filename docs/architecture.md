@@ -164,3 +164,13 @@ Detalhamento completo (bugs reais do CRC no Windows e como contorná-los, build 
 - SCC `anyuid` liberada para o namespace: a imagem oficial do Postgres não é compatível com o UID arbitrário que a SCC padrão (`restricted-v2`) do OpenShift força — concessão aceitável só porque é um cluster de laboratório, documentada como não recomendada para OpenShift de produção.
 - Dois bugs reais de build corrigidos no repositório (`infra/nginx/Dockerfile.prod`, `.dockerignore` na raiz) — expostos porque o Buildah do OpenShift roda builds sem privilégio (rootless) por padrão, algo que builds normais do Docker Desktop nunca exercitam. Ambas as correções beneficiam qualquer pipeline de build rootless, não só o CRC.
 - `Ingress` do chart é traduzido automaticamente em `Route` nativa pelo controller `openshift-default` — não precisou de manifests OpenShift-específicos.
+
+## k3s (Fase 9)
+
+Detalhamento completo (bugs reais de Secure Boot/LVM/URL de conexão, build na VM) em [docs/k3s.md](k3s.md). Resumo do desenho:
+
+- Mesmo chart Helm, sem nenhum ajuste de manifest — só um `values-k3s.yaml` (não versionado) trocando `ingress.className` para `traefik` e as credenciais.
+- Escolhido como alternativa mais leve ao OpenShift Local (Fase 8): mesma capacidade de orquestração real, pegada de recursos bem menor (VM de 2GB RAM / 20GB disco vs. 12GB RAM / 60GB disco fixo do CRC) — decisão tomada depois do CRC se mostrar pesado demais para o disco NVMe de entrada do host.
+- VM (`sjo-k3s-01`) com IP real na rede local, ao contrário do CRC (só alcançável via túnel em `127.0.0.1`) — dispensa qualquer truque de rede para acesso externo.
+- Sem SCC, sem `anyuid` — o modelo de segurança padrão do k3s aceita a imagem oficial do Postgres sem ajuste algum, diferente do OpenShift.
+- Imagens `backend`/`web` construídas na própria VM (Docker Engine instalado ali, sem Docker Desktop no host) e importadas direto no containerd do k3s via `k3s ctr images import`, sem precisar de registry.

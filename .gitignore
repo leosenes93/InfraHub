@@ -40,3 +40,6 @@ storage/uploads/*
 # --- Helm values com segredos reais (nao versionar) ---
 k8s/**/values-*.yaml
 !k8s/**/values.yaml
+
+# --- Manifests experimentais/pausados com segredos reais (nao versionar) ---
+k8s/zabbix/

@@ -65,6 +65,15 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 - SCC `anyuid` liberada para o Postgres (imagem oficial não é compatível com UID arbitrário) — concessão aceitável para este cluster de laboratório, documentada como não-recomendada para produção.
 - Validado de ponta a ponta com a stack real: todos os Pods saudáveis, migração do banco aplicada no start do backend, login via API retornando token JWT válido através da Route (traduzida automaticamente do `Ingress` do chart pelo controller `openshift-default`).
 
+## Fase 9 — k3s ✅
+
+- Núcleo da aplicação rodando em [k3s](https://k3s.io/), reaproveitando o mesmo chart Helm sem nenhum ajuste de manifest — ver [docs/k3s.md](k3s.md) para configuração completa e os bugs reais encontrados (Secure Boot com template errado pra Linux, partição LVM subalocada, senhas com caracteres especiais quebrando a URL de conexão do Postgres).
+- Escolhido como alternativa mais leve ao OpenShift Local depois deste ter se mostrado pesado demais para o disco NVMe de entrada da máquina (QLC, sem DRAM própria) — mesmo objetivo (orquestração real), pegada de recursos bem menor (VM de 2GB RAM / 20GB disco vs. 12GB RAM / 60GB disco fixo do CRC).
+- VM com IP real na LAN (`192.168.2.53`), diferente do CRC (só alcançável via túnel em `127.0.0.1`) — sem necessidade de `netsh portproxy` ou NodePort para acesso externo.
+- Builds das imagens `backend`/`web` feitos direto na VM (Docker Engine + `buildx`, sem Docker Desktop) e importados pro containerd do k3s sem precisar de registry.
+- Sem SCC, sem `anyuid` — o modelo de segurança padrão do k3s aceita a imagem oficial do Postgres sem ajuste.
+- Validado de ponta a ponta com a stack real: todos os Pods saudáveis sem reinícios, migração do banco aplicada, login via API retornando token JWT válido através do Traefik (Ingress Controller embutido no k3s).
+
 ---
 
 Cada fase é discutida e aprovada antes da implementação, conforme o modelo incremental adotado no projeto.

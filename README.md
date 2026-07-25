@@ -2,7 +2,7 @@
 
 Plataforma web para gestão de infraestrutura de TI em ambientes corporativos — inventário, documentação técnica, monitoramento e administração de ativos centralizados em um único sistema.
 
-> **Status:** Fase 8 — OpenShift Local. Veja o [roadmap completo](docs/roadmap.md).
+> **Status:** Fase 9 — k3s. Veja o [roadmap completo](docs/roadmap.md).
 
 ## Stack
 
@@ -16,7 +16,7 @@ Plataforma web para gestão de infraestrutura de TI em ambientes corporativos �
 | Observabilidade | Prometheus, Grafana, Loki, Promtail, cAdvisor, Node Exporter |
 | Monitoramento de infraestrutura | Zabbix (Postgres + TimescaleDB dedicado) |
 | Administração | Portainer, Uptime Kuma |
-| Orquestração | Docker Compose |
+| Orquestração | Docker Compose, Kubernetes, OpenShift Local, k3s |
 | CI | GitHub Actions |
 
 ## Arquitetura
@@ -159,6 +159,17 @@ oc patch bc/infrahub-web -n infrahub --type=json \
 ```
 
 Veja [docs/openshift.md](docs/openshift.md) para o passo a passo completo — inclui dois bugs reais do CRC no Windows (e como contorná-los) e dois bugs reais de build corrigidos no repositório (`.dockerignore`, `Dockerfile.prod`) que beneficiam qualquer pipeline de build rootless.
+
+## k3s
+
+Alternativa mais leve ao OpenShift Local — mesmo chart Helm, mesma capacidade de orquestração real, mas cabendo confortavelmente numa VM de 2GB RAM / 20GB disco (o CRC pede 12GB RAM / 60GB disco fixo):
+
+```bash
+curl -sfL https://get.k3s.io | sh -
+helm install infrahub k8s/infrahub -f k8s/infrahub/values-k3s.yaml
+```
+
+Veja [docs/k3s.md](docs/k3s.md) para o passo a passo completo — inclui bugs reais encontrados (Secure Boot com template errado para VMs Linux no Hyper-V, partição LVM subalocada travando o disco, senhas com caracteres especiais quebrando a URL de conexão do Postgres).
 
 ## Papéis de acesso (RBAC)
 
