@@ -74,6 +74,14 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 - Sem SCC, sem `anyuid` — o modelo de segurança padrão do k3s aceita a imagem oficial do Postgres sem ajuste.
 - Validado de ponta a ponta com a stack real: todos os Pods saudáveis sem reinícios, migração do banco aplicada, login via API retornando token JWT válido através do Traefik (Ingress Controller embutido no k3s).
 
+## Fase 10 — pfSense e segmentação de rede ✅
+
+- VM [pfSense](https://www.pfsense.org/) (Community Edition) com WAN na rede de casa (`192.168.2.0/24`, papel de "internet" nesta simulação) e LAN roteando uma rede interna nova (`10.1.1.0/24`) — ver [docs/pfsense.md](pfsense.md) para topologia completa e os 7 bugs reais encontrados.
+- As três VMs do lab (`sjo-dc-01`, `sjo-dc-02`, `sjo-k3s-01`) migradas da LAN de casa pra essa rede interna; o cluster k3s foi **reinstalado do zero** no IP novo (o IP do node fica cravado nos certificados TLS internos gerados na primeira instalação) e toda a stack (InfraHub, Zabbix, Grafana/Prometheus, Headlamp) redeployada a partir do próprio repositório Git.
+- `sjo-k3s-01` entrou no domínio Active Directory (`realmd`/`sssd`) — as DCs já eram o domínio, faltava o node do k3s ser membro.
+- NAT/port-forward no pfSense expõe o Ingress do InfraHub e RDP das duas DCs pra WAN — validado com a máquina física (do lado "WAN"/rede do roteador) acessando os serviços internos como um cliente externo de verdade acessaria.
+- Replicação AD e disponibilidade dos ativos no Zabbix revalidadas de ponta a ponta após a migração (`repadmin /syncall /AeD` sem falhas, os 3 hosts com `available: true`).
+
 ---
 
 Cada fase é discutida e aprovada antes da implementação, conforme o modelo incremental adotado no projeto.

@@ -174,3 +174,13 @@ Detalhamento completo (bugs reais de Secure Boot/LVM/URL de conexão, build na V
 - VM (`sjo-k3s-01`) com IP real na rede local, ao contrário do CRC (só alcançável via túnel em `127.0.0.1`) — dispensa qualquer truque de rede para acesso externo.
 - Sem SCC, sem `anyuid` — o modelo de segurança padrão do k3s aceita a imagem oficial do Postgres sem ajuste algum, diferente do OpenShift.
 - Imagens `backend`/`web` construídas na própria VM (Docker Engine instalado ali, sem Docker Desktop no host) e importadas direto no containerd do k3s via `k3s ctr images import`, sem precisar de registry.
+
+## pfSense e segmentação de rede (Fase 10)
+
+Detalhamento completo (topologia, bugs reais de NAT/DNS/RDP) em [docs/pfsense.md](pfsense.md). Resumo do desenho:
+
+- VM pfSense com WAN na rede de casa (papel de "internet" nesta simulação) e LAN roteando uma rede interna nova (`10.1.1.0/24`), onde vivem as DCs e o cluster k3s — antes todas ficavam direto na LAN de casa, sem segmentação.
+- Migração das DCs feita uma de cada vez com checkpoint Hyper-V antes de cada mudança de rede, validando replicação AD (`repadmin /syncall /AeD`) a cada passo.
+- Cluster k3s reinstalado do zero no IP novo (não reconfigurado no lugar) porque o IP do node fica cravado nos certificados TLS internos gerados na primeira instalação — toda a stack (chart Helm, Zabbix, monitoring) é IaC e redeploya a partir do próprio Git, mas os *dados* dentro dela (Postgres do InfraHub, histórico do Zabbix) não sobrevivem à reinstalação sem backup próprio dos volumes.
+- `sjo-k3s-01` entrou no domínio Active Directory via `realmd`/`sssd`.
+- NAT/port-forward no pfSense expõe o Ingress do InfraHub e RDP das DCs pra WAN, validado com a máquina física atuando como cliente externo real.

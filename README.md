@@ -2,7 +2,7 @@
 
 Plataforma web para gestão de infraestrutura de TI em ambientes corporativos — inventário, documentação técnica, monitoramento e administração de ativos centralizados em um único sistema.
 
-> **Status:** Fase 9 — k3s. Veja o [roadmap completo](docs/roadmap.md).
+> **Status:** Fase 10 — pfSense e segmentação de rede. Veja o [roadmap completo](docs/roadmap.md).
 
 ## Stack
 
@@ -17,6 +17,7 @@ Plataforma web para gestão de infraestrutura de TI em ambientes corporativos �
 | Monitoramento de infraestrutura | Zabbix (Postgres + TimescaleDB dedicado) |
 | Administração | Portainer, Uptime Kuma |
 | Orquestração | Docker Compose, Kubernetes, OpenShift Local, k3s |
+| Rede/segurança do lab | pfSense (firewall/roteador, NAT, segmentação) |
 | CI | GitHub Actions |
 
 ## Arquitetura
@@ -172,6 +173,12 @@ helm install infrahub k8s/infrahub -f k8s/infrahub/values-k3s.yaml
 Veja [docs/k3s.md](docs/k3s.md) para o passo a passo completo — inclui bugs reais encontrados (Secure Boot com template errado para VMs Linux no Hyper-V, partição LVM subalocada travando o disco, senhas com caracteres especiais quebrando a URL de conexão do Postgres, variáveis `VITE_*` que precisam ser passadas em tempo de build, não runtime).
 
 O mesmo cluster também roda **Grafana + Prometheus**, **Zabbix** (com os agentes das VMs de domínio reportando pra ele) e o **Headlamp** (painel web do cluster, sucessor mantido do Kubernetes Dashboard, que foi arquivado) — manifests em `k8s/monitoring/` e `k8s/zabbix/`.
+
+## pfSense e segmentação de rede
+
+As DCs e o cluster k3s deixaram de ficar direto na LAN de casa e passaram a viver atrás de um firewall/roteador [pfSense](https://www.pfsense.org/), numa rede interna dedicada (`10.1.1.0/24`) — com NAT/port-forward expondo o Ingress do InfraHub e RDP das DCs pra rede de casa, simulando acesso externo real, e a VM do k3s agora também é membro do domínio Active Directory.
+
+Veja [docs/pfsense.md](docs/pfsense.md) para a topologia completa e os bugs reais encontrados (bloqueio de redes privadas na WAN por padrão, RDP nunca habilitado nas DCs, `systemd-resolved` não resolvendo o domínio AD sem um *search domain* explícito, entre outros).
 
 ## Papéis de acesso (RBAC)
 
