@@ -115,6 +115,12 @@ docker build -f infra/nginx/Dockerfile.prod \
   -t infrahub-web:prod .
 ```
 
+## "Workloads" (ex-"Docker Local") funciona dentro do cluster
+
+A página que antes só lia containers via socket do Docker (`/var/run/docker.sock`, disponível só no Docker Compose) agora se adapta ao ambiente: o backend detecta se está rodando dentro de um Pod checando a existência do token da ServiceAccount montado automaticamente em `/var/run/secrets/kubernetes.io/serviceaccount/token`. Se sim, consulta a própria API do Kubernetes (`GET /api/v1/namespaces/{namespace}/pods`, autenticado com esse token) em vez do Docker, listando os Pods do namespace do InfraHub no mesmo formato da tabela original (nome, imagem, status, portas, criado em).
+
+Isso exige RBAC dedicado no chart (`k8s/infrahub/templates/rbac.yaml`): uma `ServiceAccount` própria pro backend (em vez da `default` implícita, sem permissões), com uma `Role` namespaced (`get`/`list`/`watch` em `pods`) e a `RoleBinding` correspondente — sem isso a chamada à API do Kubernetes falharia com 403.
+
 ## Painel do cluster (Headlamp)
 
 O [Kubernetes Dashboard](https://github.com/kubernetes/dashboard) oficial está **arquivado** (sem manutenção) — o próprio projeto recomenda o [Headlamp](https://headlamp.dev/), mantido pelo sig-ui do Kubernetes, como substituto:

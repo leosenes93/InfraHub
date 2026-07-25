@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "infrahub.fullname" . }}-backend
+  labels:
+    {{- include "infrahub.labels" . | nindent 4 }}
+---
+# Permite ao backend listar/observar os Pods do proprio namespace via API do
+# Kubernetes quando roda dentro de um cluster (sem socket do Docker disponivel) —
+# ver app/services/kubernetes_service.py.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "infrahub.fullname" . }}-backend-pods-reader
+  labels:
+    {{- include "infrahub.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "infrahub.fullname" . }}-backend-pods-reader
+  labels:
+    {{- include "infrahub.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "infrahub.fullname" . }}-backend-pods-reader
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "infrahub.fullname" . }}-backend
+    namespace: {{ .Release.Namespace }}

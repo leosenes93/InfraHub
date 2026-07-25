@@ -8,7 +8,7 @@ import { isAdmin } from "@/lib/permissions";
 const NAV_LINKS = [
   { label: "Dashboard", to: "/" },
   { label: "Inventário", to: "/inventory" },
-  { label: "Docker Local", to: "/docker" },
+  { label: "Workloads", to: "/docker" },
 ];
 
 const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL;

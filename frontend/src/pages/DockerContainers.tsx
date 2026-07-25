@@ -3,11 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { listDockerContainers } from "@/api/docker";
 
 const STATE_COLORS: Record<string, string> = {
+  // Docker
   running: "bg-green-50 text-green-700",
   exited: "bg-slate-100 text-slate-600",
   paused: "bg-orange-50 text-orange-700",
   restarting: "bg-orange-50 text-orange-700",
   dead: "bg-red-50 text-red-700",
+  // Kubernetes (pod phase)
+  succeeded: "bg-slate-100 text-slate-600",
+  pending: "bg-orange-50 text-orange-700",
+  failed: "bg-red-50 text-red-700",
+  unknown: "bg-slate-100 text-slate-600",
 };
 
 export function DockerContainers() {
@@ -24,9 +30,10 @@ export function DockerContainers() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-slate-900">Docker Local</h2>
+        <h2 className="text-xl font-semibold text-slate-900">Workloads</h2>
         <p className="text-sm text-slate-500">
-          Containers em execução no host, lidos diretamente do socket do Docker.
+          Containers em execução, lidos diretamente do Docker (host) ou, quando o InfraHub roda
+          dentro de um cluster Kubernetes, dos Pods do próprio namespace via API do Kubernetes.
         </p>
       </div>
 
@@ -34,7 +41,7 @@ export function DockerContainers() {
 
       {isError && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          Não foi possível conectar ao Docker
+          Não foi possível listar os containers/pods
           {error instanceof Error ? `: ${error.message}` : "."}
         </div>
       )}

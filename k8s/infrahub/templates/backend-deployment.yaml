@@ -17,6 +17,7 @@ spec:
         {{- include "infrahub.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: backend
     spec:
+      serviceAccountName: {{ include "infrahub.fullname" . }}-backend
       containers:
         - name: backend
           image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}"
