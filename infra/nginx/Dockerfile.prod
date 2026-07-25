@@ -11,6 +11,14 @@ RUN --mount=type=cache,target=/root/.npm \
 # podem perder essa permissao na extracao dos pacotes; no-op em builds normais do Docker.
 RUN chmod -R +x node_modules/.bin
 COPY frontend/ .
+# Vite embute VITE_* no bundle estatico durante o build (nao em runtime) —
+# precisam ser passados como build arg (--build-arg), nao como env do container.
+ARG VITE_API_BASE_URL=/api/v1
+ARG VITE_GRAFANA_URL=""
+ARG VITE_ZABBIX_URL=""
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_GRAFANA_URL=$VITE_GRAFANA_URL
+ENV VITE_ZABBIX_URL=$VITE_ZABBIX_URL
 RUN npm run build
 
 FROM nginx:1.27-alpine

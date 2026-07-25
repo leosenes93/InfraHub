@@ -1,0 +1,74 @@
+# Mesmos scripts de infra/zabbix/ (docker-compose.zabbix.yml), reaproveitados aqui.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zabbix-timescaledb-scripts
+  namespace: zabbix
+data:
+  init-timescaledb.sql: |
+    -- Executado automaticamente pelo Postgres no primeiro start (mecanismo padrao
+    -- de /docker-entrypoint-initdb.d/), antes do zabbix-server criar seu schema.
+    CREATE EXTENSION IF NOT EXISTS timescaledb;
+  timescaledb-setup.sql: |
+    SET client_min_messages = WARNING;
+
+    CREATE OR REPLACE FUNCTION zbx_ts_unix_now() RETURNS INTEGER
+    LANGUAGE SQL STABLE AS $$ SELECT extract(epoch FROM now())::INTEGER $$;
+
+    DROP INDEX IF EXISTS history_1;
+    SELECT create_hypertable('history', 'clock', chunk_time_interval => 86400, migrate_data => true, if_not_exists => true);
+    CREATE INDEX IF NOT EXISTS history_itemid_clock_idx ON history (itemid, clock);
+    SELECT set_integer_now_func('history', 'zbx_ts_unix_now', true);
+
+    DROP INDEX IF EXISTS history_uint_1;
+    SELECT create_hypertable('history_uint', 'clock', chunk_time_interval => 86400, migrate_data => true, if_not_exists => true);
+    CREATE INDEX IF NOT EXISTS history_uint_itemid_clock_idx ON history_uint (itemid, clock);
+    SELECT set_integer_now_func('history_uint', 'zbx_ts_unix_now', true);
+
+    DROP INDEX IF EXISTS history_str_1;
+    SELECT create_hypertable('history_str', 'clock', chunk_time_interval => 86400, migrate_data => true, if_not_exists => true);
+    CREATE INDEX IF NOT EXISTS history_str_itemid_clock_idx ON history_str (itemid, clock);
+    SELECT set_integer_now_func('history_str', 'zbx_ts_unix_now', true);
+
+    DROP INDEX IF EXISTS history_log_1;
+    SELECT create_hypertable('history_log', 'clock', chunk_time_interval => 86400, migrate_data => true, if_not_exists => true);
+    CREATE INDEX IF NOT EXISTS history_log_itemid_clock_idx ON history_log (itemid, clock);
+    SELECT set_integer_now_func('history_log', 'zbx_ts_unix_now', true);
+
+    DROP INDEX IF EXISTS history_text_1;
+    SELECT create_hypertable('history_text', 'clock', chunk_time_interval => 86400, migrate_data => true, if_not_exists => true);
+    CREATE INDEX IF NOT EXISTS history_text_itemid_clock_idx ON history_text (itemid, clock);
+    SELECT set_integer_now_func('history_text', 'zbx_ts_unix_now', true);
+
+    DROP INDEX IF EXISTS trends_1;
+    SELECT create_hypertable('trends', 'clock', chunk_time_interval => 604800, migrate_data => true, if_not_exists => true);
+    CREATE INDEX IF NOT EXISTS trends_itemid_clock_idx ON trends (itemid, clock);
+    SELECT set_integer_now_func('trends', 'zbx_ts_unix_now', true);
+
+    DROP INDEX IF EXISTS trends_uint_1;
+    SELECT create_hypertable('trends_uint', 'clock', chunk_time_interval => 604800, migrate_data => true, if_not_exists => true);
+    CREATE INDEX IF NOT EXISTS trends_uint_itemid_clock_idx ON trends_uint (itemid, clock);
+    SELECT set_integer_now_func('trends_uint', 'zbx_ts_unix_now', true);
+
+    UPDATE config SET db_extension = 'timescaledb', hk_history_global = 1, hk_trends_global = 1;
+  wait-and-apply.sh: |
+    #!/bin/sh
+    set -eu
+    export PGPASSWORD="$ZABBIX_DB_PASSWORD"
+    DSN="-h zabbix-postgres -U $ZABBIX_DB_USER -d $ZABBIX_DB_NAME"
+
+    echo "Aguardando o schema do Zabbix (tabela 'history')..."
+    until psql $DSN -tAc "SELECT to_regclass('public.history')" | grep -q history; do
+      sleep 3
+    done
+
+    echo "Schema encontrado. Verificando se ja e uma hypertable..."
+    already_hypertable=$(psql $DSN -tAc "SELECT count(*) FROM timescaledb_information.hypertables WHERE hypertable_name = 'history'")
+
+    if [ "$already_hypertable" = "0" ]; then
+      echo "Aplicando conversao para hypertables..."
+      psql $DSN -v ON_ERROR_STOP=1 -f /scripts/timescaledb-setup.sql
+      echo "Conversao concluida."
+    else
+      echo "Ja convertido, nada a fazer."
+    fi

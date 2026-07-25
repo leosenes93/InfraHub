@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zabbix-web
+  namespace: zabbix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zabbix-web
+  template:
+    metadata:
+      labels:
+        app: zabbix-web
+    spec:
+      containers:
+        - name: zabbix-web
+          image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ZBX_SERVER_HOST
+              value: zabbix-server
+            - name: DB_SERVER_HOST
+              value: zabbix-postgres
+            - name: PHP_TZ
+              value: America/Sao_Paulo
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: { name: zabbix-secret, key: ZABBIX_DB_USER }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: zabbix-secret, key: ZABBIX_DB_PASSWORD }
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef: { name: zabbix-secret, key: ZABBIX_DB_NAME }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zabbix-web
+  namespace: zabbix
+spec:
+  selector:
+    app: zabbix-web
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zabbix-web
+  namespace: zabbix
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: zabbix.k3s.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: zabbix-web
+                port:
+                  number: 8080

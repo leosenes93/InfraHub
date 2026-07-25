@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: zabbix-timescaledb-setup
+  namespace: zabbix
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: timescale/timescaledb:2.17.2-pg16
+          command: ["sh", "/scripts/wait-and-apply.sh"]
+          envFrom:
+            - secretRef:
+                name: zabbix-secret
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: scripts
+          configMap:
+            name: zabbix-timescaledb-scripts
+            defaultMode: 0755

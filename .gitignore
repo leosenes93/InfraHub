@@ -41,5 +41,6 @@ storage/uploads/*
 k8s/**/values-*.yaml
 !k8s/**/values.yaml
 
-# --- Manifests experimentais/pausados com segredos reais (nao versionar) ---
-k8s/zabbix/
+# --- Manifests do k8s com segredos reais inline (nao versionar) ---
+k8s/monitoring/05-secret.yaml
+k8s/zabbix/02-secret.yaml
