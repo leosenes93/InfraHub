@@ -2,7 +2,7 @@
 
 Plataforma web para gestão de infraestrutura de TI em ambientes corporativos — inventário, documentação técnica, monitoramento e administração de ativos centralizados em um único sistema.
 
-> **Status:** Fase 7 — integração com Zabbix. Veja o [roadmap completo](docs/roadmap.md).
+> **Status:** Fase 8 — OpenShift Local. Veja o [roadmap completo](docs/roadmap.md).
 
 ## Stack
 
@@ -144,6 +144,21 @@ helm install infrahub k8s/infrahub \
 ```
 
 Veja [docs/kubernetes.md](docs/kubernetes.md) para o mapeamento completo Compose → Kubernetes, pré-requisitos e limitações conhecidas.
+
+## OpenShift Local
+
+O mesmo chart Helm também roda em [OpenShift Local](https://developers.redhat.com/products/openshift-local) (CRC), com builds das imagens acontecendo dentro do próprio cluster (sem depender de Docker Desktop):
+
+```bash
+oc new-project infrahub
+oc adm policy add-scc-to-user anyuid -z default -n infrahub
+oc new-build --name=infrahub-backend --binary --strategy=docker -n infrahub
+oc new-build --name=infrahub-web --binary --strategy=docker -n infrahub
+oc patch bc/infrahub-web -n infrahub --type=json \
+  -p '[{"op":"add","path":"/spec/strategy/dockerStrategy/dockerfilePath","value":"infra/nginx/Dockerfile.prod"}]'
+```
+
+Veja [docs/openshift.md](docs/openshift.md) para o passo a passo completo — inclui dois bugs reais do CRC no Windows (e como contorná-los) e dois bugs reais de build corrigidos no repositório (`.dockerignore`, `Dockerfile.prod`) que beneficiam qualquer pipeline de build rootless.
 
 ## Papéis de acesso (RBAC)
 

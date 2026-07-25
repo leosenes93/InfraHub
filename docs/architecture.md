@@ -154,3 +154,13 @@ Detalhamento completo (arquitetura, TimescaleDB, como gerar o token de API, como
 - Nova rota somente leitura `GET /assets/{asset_id}/monitoring` (`app/api/v1/monitoring.py`), liberada para qualquer usuário autenticado — mesma filosofia da rota de containers Docker da Fase 5: sem RBAC extra porque é informação de leitura, não uma ação sensível.
 - `POST /assets/{asset_id}/monitoring/link-zabbix` (RBAC igual à escrita de ativos) cria o host no Zabbix automaticamente a partir do `ip_address` do ativo — garante o grupo `InfraHub` e aplica o template `ICMP Ping` (checagem sem exigir agente), e persiste o `hostid` retornado. Alternativa à vinculação manual para ativos que já têm IP cadastrado.
 - Frontend: seção "Monitoramento" na página do ativo, consultando o endpoint via React Query com `refetchInterval` de 30s — mostra disponibilidade (badge) e a lista de problemas ativos quando o ativo está vinculado, ou o botão de criação automática quando não está.
+
+## OpenShift Local (Fase 8)
+
+Detalhamento completo (bugs reais do CRC no Windows e como contorná-los, build in-cluster, SCCs) em [docs/openshift.md](openshift.md). Resumo do desenho:
+
+- Mesmo chart Helm da Fase 6 (`k8s/infrahub/`), sem duplicar manifests — só um `values-crc.yaml` (não versionado, contém segredos) sobrescrevendo imagem, `ingress.className` e credenciais.
+- Imagens `backend`/`web` construídas **dentro do cluster** via `BuildConfig` (estratégia Docker, upload binário do código local) — sem depender de Docker Desktop, que fica dispensável nessa configuração.
+- SCC `anyuid` liberada para o namespace: a imagem oficial do Postgres não é compatível com o UID arbitrário que a SCC padrão (`restricted-v2`) do OpenShift força — concessão aceitável só porque é um cluster de laboratório, documentada como não recomendada para OpenShift de produção.
+- Dois bugs reais de build corrigidos no repositório (`infra/nginx/Dockerfile.prod`, `.dockerignore` na raiz) — expostos porque o Buildah do OpenShift roda builds sem privilégio (rootless) por padrão, algo que builds normais do Docker Desktop nunca exercitam. Ambas as correções beneficiam qualquer pipeline de build rootless, não só o CRC.
+- `Ingress` do chart é traduzido automaticamente em `Route` nativa pelo controller `openshift-default` — não precisou de manifests OpenShift-específicos.

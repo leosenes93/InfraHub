@@ -7,6 +7,9 @@ WORKDIR /app
 COPY frontend/package.json ./
 RUN --mount=type=cache,target=/root/.npm \
     npm install
+# Corrige o bit de execucao de node_modules/.bin/* — builds rootless (ex.: OpenShift/Buildah)
+# podem perder essa permissao na extracao dos pacotes; no-op em builds normais do Docker.
+RUN chmod -R +x node_modules/.bin
 COPY frontend/ .
 RUN npm run build
 

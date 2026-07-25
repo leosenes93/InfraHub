@@ -57,6 +57,14 @@ O projeto é construído de forma incremental. A Fase 1 entrega o núcleo (auten
 - Porta trapper (`10051`) exposta para receber, no futuro, agentes Zabbix instalados em VMs no Hyper-V (controlador de domínio, DNS etc.), fora do escopo deste repositório.
 - Validado de ponta a ponta com a stack real: hypertables confirmadas via `psql`, token de API gerado através do fluxo `token.create` → `token.generate`, e um ativo vinculado ao host embutido do Zabbix retornando status/problemas reais através do Nginx.
 
+## Fase 8 — OpenShift Local ✅
+
+- Núcleo da aplicação rodando em [OpenShift Local](https://developers.redhat.com/products/openshift-local) (CRC), reaproveitando o mesmo chart Helm da Fase 6 — ver [docs/openshift.md](openshift.md) para configuração completa, incluindo dois bugs reais do CRC no Windows encontrados e contornados (escrita automática do `hosts` quebrada; fila de disco alta por antivírus de terceiros escaneando as VMs).
+- Builds das imagens `backend`/`web` rodando **dentro do próprio cluster** (`oc new-build` + `oc start-build --from-dir`), sem depender de Docker Desktop.
+- Dois bugs reais de build corrigidos (`infra/nginx/Dockerfile.prod`, `.dockerignore` na raiz do repositório) — builds rootless (Buildah) perdiam o bit de execução de binários do `npm` e recebiam um `node_modules` do host vazando pelo contexto de build; ambas as correções beneficiam qualquer pipeline de build rootless, não só o CRC.
+- SCC `anyuid` liberada para o Postgres (imagem oficial não é compatível com UID arbitrário) — concessão aceitável para este cluster de laboratório, documentada como não-recomendada para produção.
+- Validado de ponta a ponta com a stack real: todos os Pods saudáveis, migração do banco aplicada no start do backend, login via API retornando token JWT válido através da Route (traduzida automaticamente do `Ingress` do chart pelo controller `openshift-default`).
+
 ---
 
 Cada fase é discutida e aprovada antes da implementação, conforme o modelo incremental adotado no projeto.

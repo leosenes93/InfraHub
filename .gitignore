@@ -36,3 +36,7 @@ Thumbs.db
 # --- Uploads / runtime data (mounted volumes) ---
 storage/uploads/*
 !storage/uploads/.gitkeep
+
+# --- Helm values com segredos reais (nao versionar) ---
+k8s/**/values-*.yaml
+!k8s/**/values.yaml
