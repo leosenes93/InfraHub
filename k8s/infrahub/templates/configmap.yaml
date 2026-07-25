@@ -24,3 +24,6 @@ data:
   INITIAL_ADMIN_FULL_NAME: {{ .Values.env.initialAdminFullName | quote }}
   MAX_UPLOAD_SIZE_MB: {{ .Values.env.maxUploadSizeMb | quote }}
   UPLOADS_DIR: /app/storage/uploads
+  {{- if .Values.env.zabbixApiUrl }}
+  ZABBIX_API_URL: {{ .Values.env.zabbixApiUrl | quote }}
+  {{- end }}

@@ -52,8 +52,10 @@ env:
   initialAdminFullName: Administrador InfraHub
   corsOrigins: '["http://infrahub.local"]'
   maxUploadSizeMb: "10"
+  zabbixApiUrl: ""
 
 # Valores sensíveis — troque antes de qualquer uso real.
 secrets:
   jwtSecretKey: change-this-to-a-long-random-secret
   initialAdminPassword: change-me
+  zabbixApiToken: ""
