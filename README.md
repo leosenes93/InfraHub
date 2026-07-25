@@ -169,7 +169,9 @@ curl -sfL https://get.k3s.io | sh -
 helm install infrahub k8s/infrahub -f k8s/infrahub/values-k3s.yaml
 ```
 
-Veja [docs/k3s.md](docs/k3s.md) para o passo a passo completo — inclui bugs reais encontrados (Secure Boot com template errado para VMs Linux no Hyper-V, partição LVM subalocada travando o disco, senhas com caracteres especiais quebrando a URL de conexão do Postgres).
+Veja [docs/k3s.md](docs/k3s.md) para o passo a passo completo — inclui bugs reais encontrados (Secure Boot com template errado para VMs Linux no Hyper-V, partição LVM subalocada travando o disco, senhas com caracteres especiais quebrando a URL de conexão do Postgres, variáveis `VITE_*` que precisam ser passadas em tempo de build, não runtime).
+
+O mesmo cluster também roda **Grafana + Prometheus**, **Zabbix** (com os agentes das VMs de domínio reportando pra ele) e o **Headlamp** (painel web do cluster, sucessor mantido do Kubernetes Dashboard, que foi arquivado) — manifests em `k8s/monitoring/` e `k8s/zabbix/`.
 
 ## Papéis de acesso (RBAC)
 

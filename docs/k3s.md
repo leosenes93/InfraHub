@@ -86,11 +86,43 @@ Sem SCC, sem `anyuid`, sem ajuste de permissão pro Postgres — o modelo de seg
 
 `ingress.className: traefik` — o Traefik já vem embutido no k3s por padrão, sem precisar instalar nada.
 
+## Observabilidade (Prometheus + Grafana) e Zabbix
+
+Mesmo padrão de manifests simples (sem Helm) em `k8s/monitoring/` e `k8s/zabbix/`, aplicados direto com `kubectl apply -f`:
+
+- **Prometheus** faz *service discovery* nativo do Kubernetes: coleta métricas de container/node via o endpoint cAdvisor embutido no kubelet (`kubernetes-nodes-cadvisor`), e de qualquer Pod anotado com `prometheus.io/scrape: "true"` (ex.: o backend do InfraHub, que já expõe `/metrics`).
+- **Grafana** com o datasource do Prometheus provisionado como código (`ConfigMap` montado em `/etc/grafana/provisioning/datasources`) — sem clicar em nada na UI pra configurar.
+- **Zabbix**: os mesmos manifests criados para o OpenShift (Fase 8), só trocando a `Route` por um `Ingress` do Traefik. Os agentes das VMs `sjo-dc-01`/`sjo-dc-02` foram reconfigurados (`Server`/`ServerActive` no `zabbix_agent2.conf`) para reportar pro novo servidor em `192.168.2.53:31051` (NodePort do trapper) — sem precisar de `netsh portproxy`, já que a VM tem IP real na LAN.
+
+### Bug real: variáveis `VITE_*` não chegavam no frontend
+
+Depois de subir Grafana/Zabbix, os atalhos "Monitoramento"/"Zabbix" no InfraHub continuavam não aparecendo. Causa: `infra/nginx/Dockerfile.prod` não declarava `ARG`/`ENV` para `VITE_GRAFANA_URL`/`VITE_ZABBIX_URL` — o Vite embute essas variáveis no bundle estático **durante o build**, não em runtime, então passá-las como variável de ambiente do container (como o `values-k3s.yaml` fazia) nunca teria efeito nenhum. Corrigido declarando `ARG` com valor padrão e promovendo para `ENV` antes do `RUN npm run build`, permitindo configurar via `--build-arg` no momento certo:
+```bash
+docker build -f infra/nginx/Dockerfile.prod \
+  --build-arg VITE_GRAFANA_URL=http://grafana.k3s.local \
+  --build-arg VITE_ZABBIX_URL=http://zabbix.k3s.local \
+  -t infrahub-web:prod .
+```
+
+## Painel do cluster (Headlamp)
+
+O [Kubernetes Dashboard](https://github.com/kubernetes/dashboard) oficial está **arquivado** (sem manutenção) — o próprio projeto recomenda o [Headlamp](https://headlamp.dev/), mantido pelo sig-ui do Kubernetes, como substituto:
+```bash
+helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
+helm install headlamp headlamp/headlamp --namespace kube-system
+kubectl create token headlamp --namespace kube-system --duration=8760h
+```
+O chart já cria a ServiceAccount `headlamp`; um `ClusterRoleBinding` pra `cluster-admin` (`k8s/monitoring/06-headlamp-ingress.yaml`) permite login completo com o token gerado.
+
 ## Acesso
 
-- InfraHub: `http://infrahub.k3s.local` (aponta direto pro IP da VM, `192.168.2.53`, sem túnel)
-- Painel do cluster (opcional, não instalado por padrão): [Kubernetes Dashboard](https://github.com/kubernetes/dashboard) via navegador, ou [Lens](https://k8slens.dev/)/`k9s` como alternativas desktop/terminal.
+- InfraHub: `http://infrahub.k3s.local`
+- Grafana: `http://grafana.k3s.local` (usuário `admin`, senha em `k8s/monitoring/05-secret.yaml`, não versionado)
+- Zabbix: `http://zabbix.k3s.local` (login inicial `Admin`/`zabbix` — trocar antes de expor além da rede local)
+- Painel do cluster (Headlamp): `http://dashboard.k3s.local` (login via token de ServiceAccount, `kubectl create token headlamp -n kube-system`)
+
+Todos os hosts apontam direto pro IP real da VM (`192.168.2.53`), sem túnel — diferente do CRC/OpenShift Local.
 
 ## Verificação feita
 
-Cluster validado de ponta a ponta: todos os Pods (`backend`, `web`, `postgres`, `redis`) saudáveis sem reinícios após a correção da senha, migração do banco aplicada no start do backend, e login real via `POST /api/v1/auth/login` retornando um token JWT válido através do Traefik.
+Cluster validado de ponta a ponta: todos os Pods (`backend`, `web`, `postgres`, `redis`, `zabbix-*`, `prometheus`, `grafana`, `headlamp`) saudáveis, migração do banco aplicada no start do backend, login real via `POST /api/v1/auth/login` retornando um token JWT válido através do Traefik, Prometheus com scrape targets saudáveis (nó real do cluster), Grafana autenticando e consultando o datasource, e os dois agentes Zabbix das DCs reportando dados reais (CPU, uptime, ping) para os hosts recriados no novo servidor.
