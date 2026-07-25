@@ -92,7 +92,18 @@ Mesmo padrão de manifests simples (sem Helm) em `k8s/monitoring/` e `k8s/zabbix
 
 - **Prometheus** faz *service discovery* nativo do Kubernetes: coleta métricas de container/node via o endpoint cAdvisor embutido no kubelet (`kubernetes-nodes-cadvisor`), e de qualquer Pod anotado com `prometheus.io/scrape: "true"` (ex.: o backend do InfraHub, que já expõe `/metrics`).
 - **Grafana** com o datasource do Prometheus provisionado como código (`ConfigMap` montado em `/etc/grafana/provisioning/datasources`) — sem clicar em nada na UI pra configurar.
-- **Zabbix**: os mesmos manifests criados para o OpenShift (Fase 8), só trocando a `Route` por um `Ingress` do Traefik. Os agentes das VMs `sjo-dc-01`/`sjo-dc-02` foram reconfigurados (`Server`/`ServerActive` no `zabbix_agent2.conf`) para reportar pro novo servidor em `192.168.2.53:31051` (NodePort do trapper) — sem precisar de `netsh portproxy`, já que a VM tem IP real na LAN.
+- **kube-state-metrics**: complementa o cAdvisor, que só expõe métricas de container por ID de cgroup cru (sem nome de Pod/namespace legível). O kube-state-metrics fala com a API do Kubernetes e expõe métricas com rótulos limpos (`namespace`, `pod`, `deployment`) — é o que torna o dashboard abaixo possível.
+- **Dashboard "k3s - Visão Geral do Cluster"** provisionado como código em `k8s/monitoring/dashboards/k3s-cluster-overview.json`: pods em execução, namespaces, nodes, reinícios de containers na última hora, distribuição de pods por namespace, status dos pods, CPU/memória do node, réplicas desejadas x disponíveis por Deployment, containers com mais reinícios, e saúde dos alvos de coleta do Prometheus. Como o ConfigMap com o JSON do dashboard é gerado a partir do arquivo (não escrito à mão em YAML), aplica-se assim:
+  ```bash
+  kubectl create configmap grafana-dashboards-json -n monitoring \
+    --from-file=k8s/monitoring/dashboards/k3s-cluster-overview.json \
+    --dry-run=client -o yaml | kubectl apply -f -
+  ```
+- **Zabbix**: os mesmos manifests criados para o OpenShift (Fase 8), só trocando a `Route` por um `Ingress` do Traefik. Os agentes das VMs `sjo-dc-01`/`sjo-dc-02` (e da própria `sjo-k3s-01`, que também roda um agente local) foram configurados para reportar pro servidor em `192.168.2.53:31051` (NodePort do trapper) — sem precisar de `netsh portproxy`, já que a VM tem IP real na LAN.
+
+### Bug real: datasource do Grafana com UID errado
+
+Os painéis do dashboard referenciam o datasource pelo UID fixo `prometheus` (prática recomendada — evita quebrar se o nome mudar). Sem declarar `uid: prometheus` explicitamente no provisionamento, o Grafana gera um UID aleatório (`PBFA97CFB590B2093` no caso) — todos os painéis quebravam com "Unable to find datasource". Corrigido adicionando `uid: prometheus` no `ConfigMap` de datasources.
 
 ### Bug real: variáveis `VITE_*` não chegavam no frontend
 
